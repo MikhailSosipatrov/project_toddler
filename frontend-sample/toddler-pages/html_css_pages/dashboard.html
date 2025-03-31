@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дашборд</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f7fc;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 2px solid #ccc;
+    }
+    .header h1 {
+      margin: 0;
+    }
+    .button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: #0056b3;
+    }
+    .filters {
+      margin: 20px 0;
+      display: flex;
+      justify-content: flex-start;
+      gap: 15px;
+    }
+    .filters select {
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .projects-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .project-card {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 250px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .project-card:hover {
+      transform: scale(1.05);
+    }
+    .project-card h3 {
+      margin-top: 0;
+    }
+    .project-card p {
+      color: #666;
+      font-size: 14px;
+    }
+    .project-card .view-button {
+      margin-top: 10px;
+      display: inline-block;
+      padding: 8px 15px;
+      background-color: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    .project-card .view-button:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>Дашборд</h1>
+      <button class="button">Создать новый проект</button>
+    </div>
+
+    <div class="filters">
+      <select>
+        <option>Сортировка по приоритету</option>
+        <option>Высокий</option>
+        <option>Средний</option>
+        <option>Низкий</option>
+      </select>
+      <select>
+        <option>Сортировка по срокам</option>
+        <option>Сегодня</option>
+        <option>Эта неделя</option>
+        <option>Все сроки</option>
+      </select>
+    </div>
+
+    <div class="projects-list">
+      <div class="project-card">
+        <h3>Проект 1</h3>
+        <p>Описание проекта 1. Краткое описание или задача, связанная с проектом.</p>
+        <a href="/project/1" class="view-button">Перейти в проект</a>
+      </div>
+
+      <div class="project-card">
+        <h3>Проект 2</h3>
+        <p>Описание проекта 2. Краткое описание или задача, связанная с проектом.</p>
+        <a href="/project/2" class="view-button">Перейти в проект</a>
+      </div>
+
+      <div class="project-card">
+        <h3>Проект 3</h3>
+        <p>Описание проекта 3. Краткое описание или задача, связанная с проектом.</p>
+        <a href="/project/3" class="view-button">Перейти в проект</a>
+      </div>
+
+      <!-- Добавить другие карточки проектов по мере необходимости -->
+    </div>
+  </div>
+
+</body>
+</html>

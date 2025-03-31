@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Проект</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f7fc;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 2px solid #ccc;
+    }
+    .header h1 {
+      margin: 0;
+    }
+    .button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: #0056b3;
+    }
+    .task-list {
+      margin-top: 30px;
+    }
+    .task-card {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .task-card h3 {
+      margin-top: 0;
+    }
+    .task-info {
+      flex-grow: 1;
+      padding-right: 20px;
+    }
+    .task-status, .task-priority, .task-deadline {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+    .task-controls {
+      display: flex;
+      gap: 10px;
+    }
+    .task-controls select, .task-controls button {
+      padding: 8px 12px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    .task-controls button {
+      background-color: #28a745;
+      color: white;
+    }
+    .task-controls button:hover {
+      background-color: #218838;
+    }
+    .task-timer {
+      font-size: 14px;
+      color: #555;
+    }
+    .task-timer button {
+      background-color: #ff5722;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+    }
+    .task-timer button:hover {
+      background-color: #e64a19;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>Проект "Проект 1"</h1>
+      <button class="button">Создать новую задачу</button>
+    </div>
+
+    <div class="task-list">
+      <div class="task-card">
+        <div class="task-info">
+          <h3>Задача 1</h3>
+          <div class="task-status">Статус: В процессе</div>
+          <div class="task-priority">Приоритет: Высокий</div>
+          <div class="task-deadline">Дедлайн: 2025-04-15</div>
+        </div>
+        <div class="task-controls">
+          <select>
+            <option>Изменить статус</option>
+            <option>В процессе</option>
+            <option>Завершено</option>
+            <option>Отложено</option>
+          </select>
+          <select>
+            <option>Изменить приоритет</option>
+            <option>Высокий</option>
+            <option>Средний</option>
+            <option>Низкий</option>
+          </select>
+          <button>Изменить</button>
+        </div>
+        <div class="task-timer">
+          <p>Время: 02:30:00</p>
+          <button>Начать/Остановить таймер</button>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="task-info">
+          <h3>Задача 2</h3>
+          <div class="task-status">Статус: Отложено</div>
+          <div class="task-priority">Приоритет: Средний</div>
+          <div class="task-deadline">Дедлайн: 2025-05-01</div>
+        </div>
+        <div class="task-controls">
+          <select>
+            <option>Изменить статус</option>
+            <option>В процессе</option>
+            <option>Завершено</option>
+            <option>Отложено</option>
+          </select>
+          <select>
+            <option>Изменить приоритет</option>
+            <option>Высокий</option>
+            <option>Средний</option>
+            <option>Низкий</option>
+          </select>
+          <button>Изменить</button>
+        </div>
+        <div class="task-timer">
+          <p>Время: 01:45:00</p>
+          <button>Начать/Остановить таймер</button>
+        </div>
+      </div>
+
+      <!-- Добавить другие карточки задач по мере необходимости -->
+    </div>
+  </div>
+
+</body>
+</html>

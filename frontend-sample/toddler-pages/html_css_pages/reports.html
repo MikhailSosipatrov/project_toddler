@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Страница отчетов</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f7fc;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      margin: 0;
+    }
+
+    .filter-section {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-section select,
+    .filter-section input[type="date"] {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+
+    .filter-section button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .filter-section button:hover {
+      background-color: #0056b3;
+    }
+
+    .report-section {
+      margin-top: 40px;
+    }
+
+    .report-section h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .report-section .chart,
+    .report-section .table {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .table {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table th,
+    table td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
+    table th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+
+    .chart {
+      height: 300px;
+      background-color: #f9f9f9;
+    }
+
+    .chart-container {
+      height: 100%;
+      width: 100%;
+      position: relative;
+    }
+
+    /* График (пример с использованием Placeholder) */
+    .chart-placeholder {
+      width: 100%;
+      height: 100%;
+      background-color: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      color: #555;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>Страница отчетов</h1>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="filter-section">
+      <div>
+        <label for="timeFilter">Выберите период:</label>
+        <input type="date" id="timeFilter" name="timeFilter">
+      </div>
+      <div>
+        <label for="priorityFilter">Приоритет:</label>
+        <select id="priorityFilter" name="priorityFilter">
+          <option value="all">Все</option>
+          <option value="high">Высокий</option>
+          <option value="medium">Средний</option>
+          <option value="low">Низкий</option>
+        </select>
+      </div>
+      <div>
+        <label for="statusFilter">Статус:</label>
+        <select id="statusFilter" name="statusFilter">
+          <option value="all">Все</option>
+          <option value="completed">Завершено</option>
+          <option value="in-progress">В процессе</option>
+          <option value="not-started">Не начато</option>
+        </select>
+      </div>
+      <div>
+        <button>Применить фильтры</button>
+      </div>
+    </div>
+
+    <!-- Отчеты -->
+    <div class="report-section">
+      <h2>Обзор времени по проектам и задачам</h2>
+
+      <!-- График -->
+      <div class="chart">
+        <div class="chart-container">
+          <div class="chart-placeholder">
+            График (Placeholder)
+          </div>
+        </div>
+      </div>
+
+      <!-- Таблица с данными -->
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <th>Проект</th>
+              <th>Задача</th>
+              <th>Потраченное время</th>
+              <th>Приоритет</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Проект 1</td>
+              <td>Задача 1</td>
+              <td>5 ч</td>
+              <td>Высокий</td>
+              <td>Завершено</td>
+            </tr>
+            <tr>
+              <td>Проект 2</td>
+              <td>Задача 2</td>
+              <td>3 ч</td>
+              <td>Средний</td>
+              <td>В процессе</td>
+            </tr>
+            <tr>
+              <td>Проект 3</td>
+              <td>Задача 3</td>
+              <td>8 ч</td>
+              <td>Низкий</td>
+              <td>Не начато</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

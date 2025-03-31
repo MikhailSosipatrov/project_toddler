@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Страница задачи</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f7fc;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 2px solid #ccc;
+    }
+
+    .header h1 {
+      margin: 0;
+    }
+
+    .task-details {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .task-details h2 {
+      margin-top: 0;
+    }
+
+    .task-info {
+      margin-bottom: 20px;
+    }
+
+    .task-info p {
+      margin: 5px 0;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .task-info label {
+      font-weight: bold;
+    }
+
+    .task-comments, .task-time-history {
+      margin-top: 30px;
+    }
+
+    .comment-box, .time-history {
+      background-color: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 15px;
+    }
+
+    .comment-box textarea, .comment-box input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    .comment-box button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .comment-box button:hover {
+      background-color: #0056b3;
+    }
+
+    .time-history p {
+      font-size: 14px;
+      color: #333;
+    }
+
+    .time-history span {
+      font-weight: bold;
+    }
+
+    .timer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .timer p {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .timer button {
+      padding: 10px 20px;
+      background-color: #ff5722;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .timer button:hover {
+      background-color: #e64a19;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>Задача "Задача 1"</h1>
+      <button class="button">Сохранить изменения</button>
+    </div>
+
+    <!-- Детальная информация о задаче -->
+    <div class="task-details">
+      <h2>Детали задачи</h2>
+      <div class="task-info">
+        <p><label>Название:</label> Задача 1</p>
+        <p><label>Описание:</label> Это описание задачи, которое объясняет ее суть.</p>
+        <p><label>Исполнитель:</label> Иван Иванов</p>
+        <p><label>Приоритет:</label> Высокий</p>
+        <p><label>Дедлайн:</label> 2025-04-15</p>
+      </div>
+    </div>
+
+    <!-- Комментарии -->
+    <div class="task-comments">
+      <div class="comment-box">
+        <h3>Добавить комментарий</h3>
+        <textarea placeholder="Напишите ваш комментарий здесь..." rows="4"></textarea>
+        <button>Добавить комментарий</button>
+      </div>
+      <div class="comment-box">
+        <h3>Комментарии:</h3>
+        <p><strong>Иван Иванов:</strong> Начал работать над задачей, ожидаю дополнительных материалов.</p>
+        <p><strong>Петр Петров:</strong> Проблема решена, задача выполнена.</p>
+      </div>
+    </div>
+
+    <!-- История времени -->
+    <div class="task-time-history">
+      <h3>История времени</h3>
+      <div class="time-history">
+        <p><span>2025-03-26 10:00-12:00</span> — Работал над задачей, анализировал требования.</p>
+        <p><span>2025-03-27 14:00-16:00</span> — Реализовал функциональность.</p>
+      </div>
+    </div>
+
+    <!-- Таймер -->
+    <div class="timer">
+      <p>Потраченное время: 04:00:00</p>
+      <button>Начать/Остановить таймер</button>
+    </div>
+
+  </div>
+
+</body>
+</html>
