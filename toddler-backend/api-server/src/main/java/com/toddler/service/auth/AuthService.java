@@ -15,7 +15,7 @@ public class AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     public void registerUser(RegisterPayload authPayload) {
-        if (userRepository.existsByPhoneNumber(authPayload.email())) {
+        if (userRepository.existsByEmail(authPayload.email())) {
             throw new RuntimeException("Пользователь с таким email уже существует");
         }
 
@@ -27,7 +27,6 @@ public class AuthService {
         user.setFirstName(authPayload.firstName());
         user.setLastName(authPayload.lastName());
         user.setPasswordHash(encodedPassword);
-        user.setStatus("ACTIVE");
 
         userRepository.save(user);
     }
