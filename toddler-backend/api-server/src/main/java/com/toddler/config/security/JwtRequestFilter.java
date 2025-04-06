@@ -3,8 +3,10 @@ package com.toddler.config.security;
 import com.toddler.entity.UserEntity;
 import com.toddler.repository.UserRepository;
 import com.toddler.service.auth.JwtService;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,36 +33,57 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authorizationHeader = request.getHeader("Authorization");
-
-        String email = null;
         String jwtToken = null;
+        String email = null;
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwtToken = authorizationHeader.substring(7);
             try {
                 email = jwtService.getEmailFromToken(jwtToken);
+            } catch (ExpiredJwtException e) {
+                log.info("Access token истёк, пробуем использовать refresh token...", e);
+
+                Cookie[] cookies = request.getCookies();
+                if (cookies != null) {
+                    System.out.println("Куки не null");
+                    for (Cookie cookie : cookies) {
+                        System.out.println(cookie.getName());
+                        if ("refreshToken".equals(cookie.getName())) {
+                            System.out.println("I am here 4");
+                            String refreshToken = cookie.getValue();
+                            try {
+                                System.out.println("I am here");
+                                email = jwtService.verifyRefreshToken(refreshToken);
+                                jwtToken = jwtService.generateAccessToken(email);
+
+                                response.setHeader("New-Access-Token", jwtToken);
+
+                                break;
+                            } catch (Exception ex) {
+                                log.error("Refresh token невалиден: " + ex.getMessage());
+                            }
+                        }
+                    }
+                }
             } catch (Exception e) {
-                log.error("Не удалось извлечь имя пользователя из токена");
+                log.error("Ошибка при извлечении email из access токена: " + e.getMessage());
             }
         }
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             Optional<UserEntity> userEntityOpt = userRepository.findByEmail(email);
-
             if (userEntityOpt.isPresent() && jwtService.validateToken(jwtToken, email)) {
                 UserEntity userEntity = userEntityOpt.get();
 
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userEntity, null, null);
-
-                usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
 
-
         chain.doFilter(request, response);
     }
+
 }
 

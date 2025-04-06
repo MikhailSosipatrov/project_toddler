@@ -1,5 +1,6 @@
 package com.toddler.service.auth;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
@@ -61,15 +62,31 @@ public class JwtService {
         return (tokenEmail.equals(email) && !isTokenExpired(token));
     }
 
+    public String verifyRefreshToken(String token) {
+        try {
+            Claims claims = getClaimsFromToken(token);
+
+            String email = claims.getSubject();
+            if (email == null) {
+                throw new IllegalArgumentException("Invalid refresh token: no subject");
+            }
+
+            return email;
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new RuntimeException("Refresh token is invalid or expired", e);
+        }
+    }
+
+
     public void setRefreshTokenCookie(String refreshToken, HttpServletResponse response) {
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .path("/")
+                .sameSite("Lax")
                 .maxAge(Duration.ofDays(7))
                 .build();
 
-        // Устанавливаем cookie в ответ
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
     }
 }

@@ -6,6 +6,7 @@ import com.toddler.service.auth.JwtService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -37,9 +38,9 @@ public class LoginController {
         return ResponseEntity.ok(new LoginResponseDto(accessToken, refreshToken));
     }
 
-    private void authenticate(String username, String password) throws Exception {
+    private void authenticate(String email, String password) throws Exception {
         try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
         } catch (BadCredentialsException e) {
             throw new Exception("Неверные учетные данные", e);
         }
