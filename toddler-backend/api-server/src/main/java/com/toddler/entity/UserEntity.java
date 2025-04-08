@@ -49,18 +49,6 @@ public class UserEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "status")
-    private String status;
-
     @Column(name = "profile_picture")
     private String profilePicture;
-
-    @Column(name = "date_of_birth")
-    private LocalDateTime dateOfBirth;
-
-    @Column(name = "phone_number")
-    private String phoneNumber;
-
-    @Column(nullable = false)
-    private boolean isVerified;
 }

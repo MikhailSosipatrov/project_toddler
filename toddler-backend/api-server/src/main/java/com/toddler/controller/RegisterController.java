@@ -23,7 +23,6 @@ public class RegisterController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@Valid @RequestBody RegisterPayload authPayload) {
-        System.out.println("Hello");
         authService.registerUser(authPayload);
         return ResponseEntity.ok("Регистрация успешна!");
     }
