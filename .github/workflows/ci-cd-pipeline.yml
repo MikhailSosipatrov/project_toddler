@@ -22,16 +22,16 @@ jobs:
 
       - name: Build and push backend Docker image
         run: |
-          docker build -t cr.yandex/crpeb7h45g4a6gi4qeiu/backend:latest -f Dockerfile ../../toddler-backend
+          docker build -t cr.yandex/crpeb7h45g4a6gi4qeiu/backend:latest -f Dockerfile ./toddler-backend
           docker push cr.yandex/crpeb7h45g4a6gi4qeiu/backend:latest
 
       - name: Build and push frontend Docker image
         run: |
-          docker build -t cr.yandex/crpqkegfau1383imp6jn/frontend:latest -f Dockerfile ../../toddler-frontend
+          docker build -t cr.yandex/crpqkegfau1383imp6jn/frontend:latest -f Dockerfile ./toddler-frontend
           docker push cr.yandex/crpqkegfau1383imp6jn/frontend:latest
 
       - name: Deploy to production server
         run: |
-          ssh root@82.202.129.169 "cd ../../ && docker-compose pull && docker-compose up -d"
+          ssh root@82.202.129.169 "docker-compose pull && docker-compose up -d"
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
