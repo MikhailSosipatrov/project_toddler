@@ -31,4 +31,4 @@ services:
       - toddler_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+  toddler_data:
