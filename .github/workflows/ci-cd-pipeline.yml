@@ -30,9 +30,11 @@ jobs:
           docker build -t cr.yandex/crpqkegfau1383imp6jn/frontend:latest -f ./toddler-frontend/Dockerfile ./toddler-frontend
           docker push cr.yandex/crpqkegfau1383imp6jn/frontend:latest
 
-      - name: Add SSH key to known_hosts
+      - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 82.202.129.169 >> ~/.ssh/known_hosts
 
       - name: Deploy to production server
