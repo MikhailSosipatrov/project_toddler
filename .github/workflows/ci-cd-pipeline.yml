@@ -1,0 +1,37 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to Yandex Cloud Registry
+        run: |
+          echo ${{ secrets.YANDEX_CLOUD_TOKEN }} | docker login cr.yandex -u oauth --password-stdin
+
+      - name: Build and push backend Docker image
+        run: |
+          docker build -t cr.yandex/crpeb7h45g4a6gi4qeiu/backend:latest -f Dockerfile ./toddler-backend
+          docker push cr.yandex/crpeb7h45g4a6gi4qeiu/backend:latest
+
+      - name: Build and push frontend Docker image
+        run: |
+          docker build -t cr.yandex/crpqkegfau1383imp6jn/frontend:latest -f Dockerfile ./toddler-frontend
+          docker push cr.yandex/crpqkegfau1383imp6jn/frontend:latest
+
+      - name: Deploy to production server
+        run: |
+          ssh root@82.202.129.169 "docker-compose pull && docker-compose up -d"
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
