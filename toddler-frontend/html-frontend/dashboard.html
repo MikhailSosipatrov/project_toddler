@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дашборд</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f7fc;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 2px solid #ccc;
+    }
+    .header h1 {
+      margin: 0;
+    }
+    .button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: #0056b3;
+    }
+    .filters {
+      margin: 20px 0;
+      display: flex;
+      justify-content: flex-start;
+      gap: 15px;
+    }
+    .filters select {
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .projects-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .project-card {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 250px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .project-card:hover {
+      transform: scale(1.05);
+    }
+    .project-card h3 {
+      margin-top: 0;
+    }
+    .project-card p {
+      color: #666;
+      font-size: 14px;
+    }
+    .project-card .view-button {
+      margin-top: 10px;
+      display: inline-block;
+      padding: 8px 15px;
+      background-color: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    .project-card .view-button:hover {
+      background-color: #218838;
+    }
+    .form-container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
+    }
+    .form-container input,
+    .form-container textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>Дашборд</h1>
+      <button class="button" onclick="toggleForm()">Создать новый проект</button>
+    </div>
+
+    <div class="form-container" id="create-project-form" style="display: none;">
+      <h3>Создать новый проект</h3>
+      <input type="text" id="project-name" placeholder="Название проекта" required>
+      <textarea id="project-description" placeholder="Описание проекта" rows="4" required></textarea>
+      <button class="button" onclick="createProject()">Создать проект</button>
+      <button class="button" onclick="toggleForm()">Отмена</button>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="search" placeholder="Поиск по названию проекта" onkeyup="searchProjects()">
+    </div>
+
+    <div class="projects-list" id="projects-list">
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async function () {
+      const token = sessionStorage.getItem("accessToken");
+
+      if (!token) {
+        alert("Вы не авторизованы!");
+        window.location.href = "/login.html";
+        return;
+      }
+
+      try {
+        // Получаем проекты
+        const projRes = await fetch("http://localhost:8080/api/v1/dashboard", {
+          headers: {
+            "Authorization": "Bearer " + token
+          }
+        });
+
+        if (projRes.ok) {
+          const projects = await projRes.json();
+          renderProjects(projects);
+        } else {
+          alert("Ошибка получения проектов");
+        }
+
+      } catch (error) {
+        console.error("Ошибка при получении данных:", error);
+      }
+    });
+
+    // Функция для отображения проектов
+    function renderProjects(projects) {
+      const container = document.getElementById("projects-list");
+      container.innerHTML = ""; // очищаем список
+
+      projects.forEach(project => {
+        const card = document.createElement("div");
+        card.className = "project-card";
+        card.innerHTML = `
+          <h3>${project.name}</h3>
+          <p>${project.description}</p>
+          <p><strong>Статус:</strong> ${project.status}</p>
+          <a href="/project/${project.id}" class="view-button">Перейти в проект</a>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Функция для поиска проектов по названию
+    function searchProjects() {
+      let input = document.getElementById("search").value.toLowerCase();
+      let projects = document.querySelectorAll(".project-card");
+
+      projects.forEach(project => {
+        let title = project.querySelector("h3").innerText.toLowerCase();
+        project.style.display = title.includes(input) ? "block" : "none";
+      });
+    }
+
+    // Функция для отображения формы создания нового проекта
+    function toggleForm() {
+      const form = document.getElementById("create-project-form");
+      form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+
+    // Функция для создания нового проекта
+    async function createProject() {
+      const name = document.getElementById("project-name").value;
+      const description = document.getElementById("project-description").value;
+      const token = sessionStorage.getItem("accessToken");
+
+      if (!name || !description) {
+        alert("Пожалуйста, заполните все поля.");
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:8080/api/v1/project", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name: name,
+            description: description
+          })
+        });
+
+        if (res.ok) {
+          const newProject = await res.json();
+          renderProjects([newProject]);  // Обновляем список с новым проектом
+          toggleForm();  // Закрываем форму
+        } else {
+          alert("Ошибка создания проекта.");
+        }
+      } catch (error) {
+        console.error("Ошибка при создании проекта:", error);
+      }
+    }
+  </script>
+
+</body>
+</html>
