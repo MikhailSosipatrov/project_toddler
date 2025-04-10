@@ -38,7 +38,7 @@ jobs:
           ssh-keyscan -H 82.202.129.169 >> ~/.ssh/known_hosts
 
       - name: Copy docker-compose.yml
-        run: scp ./docker-compose.yml root@82.202.129.169:/opt/toddler/docker-compose.yml
+        run: scp docker-compose.yaml root@82.202.129.169:/opt/toddler/docker-compose.yml
 
       - name: Deploy to production server
         run: |
