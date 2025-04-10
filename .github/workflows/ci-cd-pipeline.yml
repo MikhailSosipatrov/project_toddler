@@ -37,6 +37,9 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 82.202.129.169 >> ~/.ssh/known_hosts
 
+      - name: Copy docker-compose.yml
+        run: scp docker-compose.yml root@82.202.129.169:/opt/toddler/docker-compose.yml
+
       - name: Deploy to production server
         run: |
           ssh root@82.202.129.169 "docker compose pull && docker compose up -d"
