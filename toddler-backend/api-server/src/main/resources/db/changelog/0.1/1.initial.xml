@@ -4,50 +4,30 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="1.users_table" author="m.sosipatrov">
+    <changeSet id="1.users" author="m.sosipatrov">
         <createTable tableName="users">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="email" type="VARCHAR(255)">
-                <constraints unique="true" nullable="false"/>
+                <constraints nullable="false"/>
             </column>
             <column name="password_hash" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
             <column name="username" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="first_name" type="VARCHAR(100)">
                 <constraints nullable="false"/>
             </column>
-            <column name="last_name" type="VARCHAR(100)">
+            <column name="first_name" type="VARCHAR(255)"/>
+            <column name="last_name" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
-            <column name="created_at" type="TIMESTAMP" defaultValueComputed ="CURRENT_TIMESTAMP">
-                <constraints nullable="false"/>
-            </column>
-            <column name="updated_at" type="TIMESTAMP">
-                <constraints nullable="true"/>
-            </column>
-            <column name="status" type="VARCHAR(50)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="profile_picture" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="date_of_birth" type="DATE">
-                <constraints nullable="true"/>
-            </column>
-            <column name="phone_number" type="VARCHAR(20)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="is_verified" type="BOOLEAN" defaultValue="false">
-                <constraints nullable="false" />
-            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="profile_picture" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet id="2.projects_table" author="m.sosipatrov">
+    <changeSet id="2.projects" author="m.sosipatrov">
         <createTable tableName="projects">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
@@ -62,6 +42,7 @@
             <column name="created_at" type="TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
+            <column name="updated_at" type="TIMESTAMP"/>
         </createTable>
 
         <addForeignKeyConstraint
@@ -73,7 +54,7 @@
                 onDelete="CASCADE"/>
     </changeSet>
 
-    <changeSet id="3.project_members_table" author="m.sosipatrov">
+    <changeSet id="3.project_members" author="m.sosipatrov">
         <createTable tableName="project_members">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
@@ -87,6 +68,10 @@
             <column name="role" type="VARCHAR(50)">
                 <constraints nullable="false"/>
             </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
         </createTable>
 
         <addForeignKeyConstraint
@@ -113,205 +98,6 @@
         <sql>
             ALTER TABLE project_members
                 ADD CONSTRAINT role_check CHECK (role IN ('OWNER', 'MANAGER', 'WORKER'));
-        </sql>
-    </changeSet>
-
-    <changeSet id="4.tasks_table" author="">
-        <createTable tableName="tasks">
-            <column name="id" type="UUID">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="title" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="description" type="TEXT"/>
-            <column name="status" type="VARCHAR(50)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="priority" type="VARCHAR(50)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="project_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="assigned_to" type="UUID"/>
-            <column name="created_at" type="TIMESTAMP">
-                <constraints nullable="false"/>
-            </column>
-            <column name="due_date" type="TIMESTAMP"/>
-        </createTable>
-
-        <addForeignKeyConstraint
-                baseTableName="tasks"
-                baseColumnNames="project_id"
-                constraintName="fk_tasks_project_id"
-                referencedTableName="projects"
-                referencedColumnNames="id"
-                onDelete="CASCADE"/>
-
-        <addForeignKeyConstraint
-                baseTableName="tasks"
-                baseColumnNames="assigned_to"
-                constraintName="fk_tasks_assigned_to"
-                referencedTableName="users"
-                referencedColumnNames="id"
-                onDelete="SET NULL"/>
-
-        <sql>
-            ALTER TABLE tasks
-                ADD CONSTRAINT status_check CHECK (status IN ('TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'));
-        </sql>
-
-        <sql>
-            ALTER TABLE tasks
-                ADD CONSTRAINT priority_check CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH'));
-        </sql>
-    </changeSet>
-
-    <changeSet id="5.task_time_logs_table" author="">
-        <createTable tableName="task_time_logs">
-            <column name="id" type="UUID">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="task_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="user_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="start_time" type="TIMESTAMP">
-                <constraints nullable="false"/>
-            </column>
-            <column name="end_time" type="TIMESTAMP"/>
-        </createTable>
-
-        <addForeignKeyConstraint
-                baseTableName="task_time_logs"
-                baseColumnNames="task_id"
-                constraintName="fk_task_time_logs_task_id"
-                referencedTableName="tasks"
-                referencedColumnNames="id"
-                onDelete="CASCADE"/>
-
-        <addForeignKeyConstraint
-                baseTableName="task_time_logs"
-                baseColumnNames="user_id"
-                constraintName="fk_task_time_logs_user_id"
-                referencedTableName="users"
-                referencedColumnNames="id"
-                onDelete="CASCADE"/>
-    </changeSet>
-
-    <changeSet id="6.task_comments_table" author="m.sosipatrov">
-        <createTable tableName="task_comments">
-            <column name="id" type="UUID">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="task_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="user_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="content" type="TEXT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="created_at" type="TIMESTAMP">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-
-        <addForeignKeyConstraint
-                baseTableName="task_comments"
-                baseColumnNames="task_id"
-                constraintName="fk_task_comments_task_id"
-                referencedTableName="tasks"
-                referencedColumnNames="id"
-                onDelete="CASCADE"/>
-
-        <addForeignKeyConstraint
-                baseTableName="task_comments"
-                baseColumnNames="user_id"
-                constraintName="fk_task_comments_user_id"
-                referencedTableName="users"
-                referencedColumnNames="id"
-                onDelete="CASCADE"/>
-
-        <sql>
-            ALTER TABLE task_comments
-                ALTER COLUMN created_at SET DEFAULT NOW();
-        </sql>
-    </changeSet>
-
-    <changeSet id="7.notifications" author="m.sosipatrov">
-        <createTable tableName="notifications">
-            <column name="id" type="UUID">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="user_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="message" type="TEXT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="is_read" type="BOOLEAN" defaultValueBoolean="false"/>
-            <column name="created_at" type="TIMESTAMP">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-
-        <addForeignKeyConstraint
-                baseTableName="notifications"
-                baseColumnNames="user_id"
-                constraintName="fk_notifications_user_id"
-                referencedTableName="users"
-                referencedColumnNames="id"
-                onDelete="CASCADE"/>
-
-        <sql>
-            ALTER TABLE notifications
-                ALTER COLUMN created_at SET DEFAULT NOW();
-        </sql>
-    </changeSet>
-
-    <changeSet id="8.task_files" author="m.sosipatrov">
-        <createTable tableName="task_attachments">
-            <column name="id" type="UUID">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="task_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="user_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="file_url" type="TEXT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="uploaded_at" type="TIMESTAMP">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-
-        <addForeignKeyConstraint
-                baseTableName="task_attachments"
-                baseColumnNames="task_id"
-                constraintName="fk_task_attachments_task_id"
-                referencedTableName="tasks"
-                referencedColumnNames="id"
-                onDelete="CASCADE"/>
-
-        <addForeignKeyConstraint
-                baseTableName="task_attachments"
-                baseColumnNames="user_id"
-                constraintName="fk_task_attachments_user_id"
-                referencedTableName="users"
-                referencedColumnNames="id"
-                onDelete="CASCADE"/>
-
-        <sql>
-            ALTER TABLE task_attachments
-                ALTER COLUMN uploaded_at SET DEFAULT NOW();
         </sql>
     </changeSet>
 </databaseChangeLog>
