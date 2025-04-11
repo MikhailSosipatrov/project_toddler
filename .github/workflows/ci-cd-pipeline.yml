@@ -18,7 +18,7 @@ jobs:
 
       - name: Login to Yandex Cloud Registry
         run: |
-          echo ${{ secrets.YANDEX_CLOUD_TOKEN }} | docker login cr.yandex -u oauth --password-stdin
+          echo "${{ secrets.YANDEX_CLOUD_TOKEN }}" | docker login cr.yandex -u oauth --password-stdin
 
       - name: Build and push backend Docker image
         run: |
@@ -42,6 +42,9 @@ jobs:
 
       - name: Deploy to production server
         run: |
-          ssh root@82.202.129.169 "cd /opt/toddler && docker compose pull && docker compose up -d"
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh root@82.202.129.169 <<EOF
+            echo "${{ secrets.YANDEX_CLOUD_TOKEN }}" | docker login cr.yandex -u oauth --password-stdin
+            cd /opt/toddler
+            docker compose pull
+            docker compose up -d
+          EOF
