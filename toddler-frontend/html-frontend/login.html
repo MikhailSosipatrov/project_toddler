@@ -88,7 +88,7 @@
       <button type="submit" class="btn">Войти</button>
     </form>
     <div class="form-footer">
-      <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+      <p>Нет аккаунта? <a href="registration.html">Зарегистрироваться</a></p>
     </div>
   </div>
 
@@ -117,7 +117,7 @@
                     sessionStorage.setItem("accessToken", data.accessToken); 
 
                     alert("Вход выполнен успешно!");
-                    window.location.href = "/dashboard.html";
+                    window.location.href = "dashboard.html";
                   } else {
                     alert("Неверные учетные данные");
                 }

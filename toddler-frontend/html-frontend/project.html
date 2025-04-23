@@ -31,6 +31,58 @@
       cursor: pointer;
     }
 
+    .top-bar .project-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .top-bar .project-description {
+      display: flex;
+      gap: 10px;
+    }
+
+    .top-bar .project-actions button {
+      background-color: #dc3545;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .top-bar .project-actions .edit-btn {
+      background-color: #007bff;
+    }
+
+    .top-bar .project-actions .archive-btn {
+      background-color: #007bff;
+    }
+
+    .tabs {
+      margin: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .tab-button {
+      padding: 10px 20px;
+      background-color: #e0e0e0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .tab-button.active {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .tab-button:hover {
+      background-color: #0056b3;
+      color: white;
+    }
+
     .board {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -73,11 +125,35 @@
       font-size: 14px;
     }
 
-    .modal, .invite-modal, .members-modal {
+    .archived-tasks {
+      padding: 20px;
+    }
+
+    .archived-task {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .archived-task p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .archived-task .task-title {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .modal, .invite-modal, .members-modal, .edit-project-modal, .change-role-modal, .add-task-modal {
       display: none;
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       background-color: rgba(0,0,0,0.5);
       justify-content: center;
       align-items: center;
@@ -93,9 +169,14 @@
 
     .modal-content textarea,
     .modal-content input[type="file"],
-    .modal-content input[type="text"] {
+    .modal-content input[type="text"],
+    .modal-content input[type="date"],
+    .modal-content select {
       width: 100%;
       margin: 10px 0;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
 
     .modal-content button {
@@ -134,44 +215,121 @@
     .add-task-btn:hover {
       background-color: #218838;
     }
+
+    #notification {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      border-radius: 5px;
+      color: white;
+      z-index: 1000;
+    }
+
+    #notification.success {
+      background-color: #28a745;
+    }
+
+    #notification.error {
+      background-color: #dc3545;
+    }
+
+    #loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #loading div {
+      padding: 20px;
+      background: white;
+      border-radius: 5px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .board {
+        grid-template-columns: 1fr;
+      }
+      .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .top-bar .project-actions {
+        margin-top: 10px;
+      }
+      .modal-content {
+        width: 90%;
+      }
+    }
   </style>
 </head>
 <body>
+  <div id="notification"></div>
+  <div id="loading">
+    <div>Загрузка...</div>
+  </div>
 
   <div class="top-bar">
-    <div>
+    <div class="project-description">
       <button onclick="generateInviteLink()">Пригласить участника</button>
       <button onclick="showMembers()">Показать участников</button>
       <button onclick="location.href='report.html'">Показать отчет</button>
     </div>
+    <h1 id="projectTitle"></h1>
+    <div class="project-actions">
+      <button class="archive-btn" onclick="archiveProject()">Архивировать проект</button>
+      <button class="edit-btn" onclick="editProject()">Редактировать проект</button>
+      <button class="delete-btn" onclick="deleteProject()">Удалить проект</button>
+    </div>
   </div>
 
-  <div class="board" id="board">
-    <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
-      <h2>To Do</h2>
-      <div class="task" draggable="true" ondragstart="drag(event)" onclick="redirectToTask('task1')" id="task1">
-        <p class="task-title">Задача 1</p>
-        <p><strong>Приоритет:</strong> Высокий</p>
-        <p><strong>Дедлайн:</strong> 2025-04-15</p>
-        <p class="task-assignee">Исполнитель: Иван Иванов</p>
+  <div class="tabs">
+    <button class="tab-button active" onclick="showTab('active-tasks')">Активные задачи</button>
+    <button class="tab-button" onclick="showTab('archived-tasks')">Архив</button>
+  </div>
+
+  <div id="active-tasks" class="tab-content active">
+    <div class="board" id="board">
+      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <h2>To Do</h2>
+        <button class="add-task-btn" data-i18n="addTask" onclick="addTask(this, 'TO_DO')">+ Добавить задачу</button>
       </div>
-      <button class="add-task-btn" onclick="addTask(this, 'To Do')">+ Добавить задачу</button>
-    </div>
-    <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
-      <h2>In Progress</h2>
-      <button class="add-task-btn" onclick="addTask(this, 'In Progress')">+ Добавить задачу</button>
-    </div>
-    <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
-      <h2>Test</h2>
-      <button class="add-task-btn" onclick="addTask(this, 'Test')">+ Добавить задачу</button>
-    </div>
-    <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
-      <h2>Done</h2>
-      <button class="add-task-btn" onclick="addTask(this, 'Done')">+ Добавить задачу</button>
+      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <h2>In Progress</h2>
+        <button class="add-task-btn" data-i18n="addTask" onclick="addTask(this, 'IN_PROGRESS')">+ Добавить задачу</button>
+      </div>
+      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <h2>Test</h2>
+        <button class="add-task-btn" data-i18n="addTask" onclick="addTask(this, 'TEST')">+ Добавить задачу</button>
+      </div>
+      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <h2>Done</h2>
+        <button class="add-task-btn" data-i18n="addTask" onclick="addTask(this, 'DONE')">+ Добавить задачу</button>
+      </div>
     </div>
   </div>
 
-  <!-- Модалка задачи -->
+  <div id="archived-tasks" class="tab-content">
+    <div class="archived-tasks" id="archived-tasks-list"></div>
+  </div>
+
+  <!-- Модальные окна -->
   <div class="modal" id="taskModal">
     <div class="modal-content">
       <h3 id="modalTitle">Детали задачи</h3>
@@ -182,7 +340,6 @@
     </div>
   </div>
 
-  <!-- Приглашение -->
   <div class="modal invite-modal" id="inviteModal">
     <div class="modal-content">
       <h3>Ссылка-приглашение:</h3>
@@ -191,20 +348,266 @@
     </div>
   </div>
 
-  <!-- Участники -->
   <div class="modal members-modal" id="membersModal">
     <div class="modal-content">
       <h3>Участники проекта</h3>
-      <div class="members-list" id="membersList">
-        <!-- Участники будут добавлены здесь -->
-      </div>
+      <div class="members-list" id="membersList"></div>
       <button onclick="closeMembersModal()">Закрыть</button>
+    </div>
+  </div>
+
+  <div class="modal edit-project-modal" id="editProjectModal">
+    <div class="modal-content">
+      <h3>Редактировать проект</h3>
+      <input type="text" id="editProjectName" placeholder="Название проекта">
+      <textarea id="editProjectDescription" placeholder="Описание проекта..." rows="4"></textarea>
+      <button onclick="saveProjectChanges()">Сохранить</button>
+      <button onclick="closeEditProjectModal()">Закрыть</button>
+    </div>
+  </div>
+
+  <div class="modal change-role-modal" id="changeRoleModal">
+    <div class="modal-content">
+      <h3>Изменить роль</h3>
+      <p id="changeRoleUser"></p>
+      <select id="newRole">
+        <option value="MEMBER">Участник</option>
+        <option value="ADMIN">Админ</option>
+      </select>
+      <button onclick="saveRoleChange()">Сохранить</button>
+      <button onclick="closeChangeRoleModal()">Закрыть</button>
+    </div>
+  </div>
+
+  <div class="modal add-task-modal" id="addTaskModal">
+    <div class="modal-content">
+      <h3>Добавить задачу</h3>
+      <input type="text" id="taskName" placeholder="Название задачи">
+      <textarea id="taskDescription" placeholder="Описание задачи..." rows="4"></textarea>
+      <select id="taskPriority">
+        <option value="LOW">Низкий</option>
+        <option value="MEDIUM">Средний</option>
+        <option value="HIGH">Высокий</option>
+      </select>
+      <input type="date" id="taskDeadline" placeholder="Дедлайн">
+      <select id="taskAssignee">
+        <option value="">Не назначен</option>
+      </select>
+      <button onclick="createTask()">Создать</button>
+      <button onclick="closeAddTaskModal()">Закрыть</button>
     </div>
   </div>
 
   <script>
     let draggedTask = null;
+    let currentProjectId = null;
 
+    // Инициализация
+    window.onload = () => {
+      const projectId = getQueryParam('id');
+      if (projectId) {
+        currentProjectId = projectId;
+        loadProjectData(projectId);
+        loadArchivedTasks(projectId);
+      } else {
+        console.error('ID проекта не указан');
+        showNotification('ID проекта не указан', 'error');
+      }
+      setLanguage('ru');
+    };
+
+    // Закрытие модальных окон по клику вне окна
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    });
+
+    // Закрытие модальных окон по клавише Esc
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal').forEach(modal => {
+          modal.style.display = 'none';
+        });
+      }
+    });
+
+    // Локализация
+    const translations = {
+      ru: {
+        addTask: 'Добавить задачу',
+        save: 'Сохранить',
+        close: 'Закрыть'
+      },
+      en: {
+        addTask: 'Add Task',
+        save: 'Save',
+        close: 'Close'
+      }
+    };
+
+    function setLanguage(lang) {
+      document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        element.textContent = translations[lang][key] || element.textContent;
+      });
+    }
+
+    // Уведомления
+    function showNotification(message, type = 'success') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = type;
+      notification.style.display = 'block';
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 3000);
+    }
+
+    // Индикатор загрузки
+    function showLoading() {
+      document.getElementById('loading').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loading').style.display = 'none';
+    }
+
+    // Загрузка данных проекта
+    async function loadProjectData(projectId) {
+      showLoading();
+      try {
+        const response = await fetch(`http://localhost:8080/api/v1/projects/${projectId}`);
+        if (!response.ok) throw new Error('Ошибка загрузки проекта');
+        const project = await response.json();
+        window.projectMembers = project.members || [];
+        updateProjectUI(project);
+      } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка загрузки проекта', 'error');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Загрузка архивированных задач
+    async function loadArchivedTasks(projectId) {
+      showLoading();
+      try {
+        const response = await fetch(`http://localhost:8080/api/v1/projects/${projectId}/archive`);
+        if (!response.ok) throw new Error('Ошибка загрузки архивированных задач');
+        const archivedTasks = await response.json();
+        renderArchivedTasks(archivedTasks);
+      } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка загрузки архивированных задач', 'error');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Отображение архивированных задач
+    function renderArchivedTasks(tasks) {
+      const container = document.getElementById('archived-tasks-list');
+      container.innerHTML = '';
+
+      if (tasks.length === 0) {
+        const emptyMessage = document.createElement('p');
+        emptyMessage.textContent = 'Нет архивированных задач';
+        emptyMessage.style.textAlign = 'center';
+        emptyMessage.style.color = '#888';
+        container.appendChild(emptyMessage);
+        return;
+      }
+
+      tasks.forEach(task => {
+        const taskElement = document.createElement('div');
+        taskElement.className = 'archived-task';
+        taskElement.id = task.id;
+        taskElement.onclick = () => redirectToTask(task.id);
+
+        const executorName = task.executor
+          ? `${task.executor.firstName} ${task.executor.lastName}`
+          : 'Не назначен';
+
+        taskElement.innerHTML = `
+          <p class="task-title">${task.name}</p>
+          <p><strong>Приоритет:</strong> ${task.priority}</p>
+          <p><strong>Дедлайн:</strong> ${task.deadline || 'Не указан'}</p>
+          <p class="task-assignee">Исполнитель: ${executorName}</p>
+          <p><strong>Статус:</strong> ${task.status}</p>
+        `;
+
+        container.appendChild(taskElement);
+      });
+    }
+
+    function updateProjectUI(project) {
+      document.getElementById('projectTitle').textContent = project.name;
+      document.querySelectorAll('.task').forEach(task => task.remove());
+      document.querySelectorAll('.column p').forEach(p => {
+        if (p.textContent === 'Нет задач') p.remove();
+      });
+
+      const columns = document.querySelectorAll('.column');
+      columns.forEach(column => {
+        const status = getStatusByColumn(column);
+        const tasks = project.tasks.filter(task => task.status === status);
+
+        if (tasks.length === 0) {
+          const emptyMessage = document.createElement('p');
+          emptyMessage.textContent = 'Нет задач';
+          emptyMessage.style.textAlign = 'center';
+          emptyMessage.style.color = '#888';
+          column.insertBefore(emptyMessage, column.querySelector('.add-task-btn'));
+        } else {
+          tasks.forEach(task => {
+            const taskElement = createTaskElement(task);
+            column.insertBefore(taskElement, column.querySelector('.add-task-btn'));
+          });
+        }
+      });
+    }
+
+    // Поиск колонки по статусу
+    function getColumnByStatus(status) {
+      const statusMap = {
+        'TO_DO': 'To Do',
+        'IN_PROGRESS': 'In Progress',
+        'TEST': 'Test',
+        'DONE': 'Done'
+      };
+      return Array.from(document.querySelectorAll('.column')).find(column => {
+        return column.querySelector('h2').textContent === statusMap[status];
+      });
+    }
+
+    // Создание элемента задачи
+    function createTaskElement(task) {
+      const taskElement = document.createElement('div');
+      taskElement.className = 'task';
+      taskElement.draggable = true;
+      taskElement.id = task.id;
+      taskElement.ondragstart = drag;
+      taskElement.onclick = () => redirectToTask(task.id);
+
+      const executorName = task.executor
+        ? `${task.executor.firstName} ${task.executor.lastName}`
+        : 'Не назначен';
+
+      taskElement.innerHTML = `
+        <p class="task-title">${task.name}</p>
+        <p><strong>Приоритет:</strong> ${task.priority}</p>
+        <p><strong>Дедлайн:</strong> ${task.deadline || 'Не указан'}</p>
+        <p class="task-assignee">Исполнитель: ${executorName}</p>
+      `;
+
+      return taskElement;
+    }
+
+    // Drag and Drop
     function allowDrop(event) {
       event.preventDefault();
     }
@@ -213,94 +616,315 @@
       draggedTask = event.target;
     }
 
-    function drop(event) {
+    async function drop(event) {
       event.preventDefault();
       if (draggedTask && event.currentTarget !== draggedTask.parentElement) {
-        event.currentTarget.appendChild(draggedTask);
-        startTimer(draggedTask.id);
+        const newStatus = getStatusByColumn(event.currentTarget);
+        await updateTaskStatus(draggedTask.id, newStatus);
+        event.currentTarget.insertBefore(draggedTask, event.currentTarget.querySelector('.add-task-btn'));
       }
     }
 
-    function startTimer(taskId) {
-      console.log(`Таймер запущен для ${taskId}`);
+    async function updateTaskStatus(taskId, newStatus) {
+      try {
+        await fetch(`http://localhost:8080/api/v1/tasks/${taskId}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+      } catch (error) {
+        console.error('Ошибка обновления статуса:', error);
+        showNotification('Ошибка обновления статуса', 'error');
+      }
     }
 
-    function openModal(title) {
-      document.getElementById("modalTitle").textContent = title;
-      document.getElementById("taskModal").style.display = "flex";
+    // Вспомогательные функции
+    function getStatusByColumn(column) {
+      const statusMap = {
+        'To Do': 'TO_DO',
+        'In Progress': 'IN_PROGRESS',
+        'Test': 'TEST',
+        'Done': 'DONE'
+      };
+      return statusMap[column.querySelector('h2').textContent];
     }
 
-    function closeModal() {
-      document.getElementById("taskModal").style.display = "none";
+    function getQueryParam(param) {
+      return new URLSearchParams(window.location.search).get(param);
     }
 
+    // Управление задачами
+    function addTask(button, status) {
+      const modal = document.getElementById('addTaskModal');
+      modal.dataset.status = status;
+      populateAssignees();
+      modal.style.display = 'flex';
+    }
+
+    function closeAddTaskModal() {
+      document.getElementById('addTaskModal').style.display = 'none';
+      clearAddTaskForm();
+    }
+
+    function clearAddTaskForm() {
+      document.getElementById('taskName').value = '';
+      document.getElementById('taskDescription').value = '';
+      document.getElementById('taskPriority').value = 'LOW';
+      document.getElementById('taskDeadline').value = '';
+      document.getElementById('taskAssignee').value = '';
+    }
+
+    function populateAssignees() {
+      const assigneeSelect = document.getElementById('taskAssignee');
+      assigneeSelect.innerHTML = '<option value="">Не назначен</option>';
+      window.projectMembers.forEach(member => {
+        const option = document.createElement('option');
+        option.value = member.user.id;
+        option.textContent = `${member.user.firstName} ${member.user.lastName}`;
+        assigneeSelect.appendChild(option);
+      });
+    }
+
+    function validateTaskForm(name, deadline) {
+      if (!name || name.length < 3) {
+        showNotification('Название задачи должно быть не короче 3 символов', 'error');
+        return false;
+      }
+      if (deadline && new Date(deadline) < new Date()) {
+        showNotification('Дедлайн не может быть в прошлом', 'error');
+        return false;
+      }
+      return true;
+    }
+
+    async function createTask() {
+      const name = document.getElementById('taskName').value;
+      const description = document.getElementById('taskDescription').value;
+      const priority = document.getElementById('taskPriority').value;
+      const deadline = document.getElementById('taskDeadline').value;
+      const assigneeId = document.getElementById('taskAssignee').value;
+      const status = document.getElementById('addTaskModal').dataset.status;
+
+      if (!validateTaskForm(name, deadline)) return;
+
+      showLoading();
+      try {
+        const response = await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}/tasks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            description,
+            priority,
+            deadline,
+            executorId: assigneeId || null,
+            status
+          })
+        });
+
+        if (response.ok) {
+          closeAddTaskModal();
+          loadProjectData(currentProjectId);
+          showNotification('Задача успешно создана!');
+        } else {
+          throw new Error('Ошибка создания задачи');
+        }
+      } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка при создании задачи', 'error');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Управление участниками
+    function showMembers() {
+      const list = document.getElementById('membersList');
+      list.innerHTML = '';
+
+      window.projectMembers.forEach(member => {
+        const p = document.createElement('p');
+        const fullName = `${member.user.firstName} ${member.user.lastName}`;
+        p.innerHTML = `
+          ${fullName} (${member.role})
+          <button onclick="deleteMember('${member.user.id}')">Удалить</button>
+          <button onclick="changeRole('${member.user.id}')">Изменить роль</button>
+        `;
+        list.appendChild(p);
+      });
+
+      document.getElementById('membersModal').style.display = 'flex';
+    }
+
+    async function deleteMember(userId) {
+      showLoading();
+      try {
+        await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}/members/${userId}`, {
+          method: 'DELETE'
+        });
+        loadProjectData(currentProjectId);
+        showNotification('Участник удален');
+      } catch (error) {
+        console.error('Ошибка удаления:', error);
+        showNotification('Ошибка удаления участника', 'error');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    function changeRole(userId) {
+      const modal = document.getElementById('changeRoleModal');
+      modal.dataset.userId = userId;
+      const member = window.projectMembers.find(m => m.user.id === userId);
+      document.getElementById('changeRoleUser').textContent = `Пользователь: ${member.user.firstName} ${member.user.lastName}`;
+      document.getElementById('newRole').value = member.role;
+      modal.style.display = 'flex';
+    }
+
+    function closeChangeRoleModal() {
+      document.getElementById('changeRoleModal').style.display = 'none';
+    }
+
+    async function saveRoleChange() {
+      const userId = document.getElementById('changeRoleModal').dataset.userId;
+      const newRole = document.getElementById('newRole').value;
+
+      showLoading();
+      try {
+        await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}/members/${userId}/role`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: newRole })
+        });
+        closeChangeRoleModal();
+        loadProjectData(currentProjectId);
+        showNotification('Роль изменена');
+      } catch (error) {
+        console.error('Ошибка изменения роли:', error);
+        showNotification('Ошибка изменения роли', 'error');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Редактирование проекта
+    function editProject() {
+      const modal = document.getElementById('editProjectModal');
+      document.getElementById('editProjectName').value = document.getElementById('projectTitle').textContent;
+      modal.style.display = 'flex';
+    }
+
+    function closeEditProjectModal() {
+      document.getElementById('editProjectModal').style.display = 'none';
+    }
+
+    async function saveProjectChanges() {
+      const name = document.getElementById('editProjectName').value;
+      const description = document.getElementById('editProjectDescription').value;
+
+      if (!name) {
+        showNotification('Название проекта обязательно!', 'error');
+        return;
+      }
+
+      showLoading();
+      try {
+        const response = await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, description })
+        });
+
+        if (response.ok) {
+          closeEditProjectModal();
+          loadProjectData(currentProjectId);
+          showNotification('Проект обновлен');
+        } else {
+          throw new Error('Ошибка обновления проекта');
+        }
+      } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка при обновлении проекта', 'error');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Остальные функции
     function generateInviteLink() {
-      const projectId = "abc123"; // здесь можно подставлять динамический ID
-      const link = `https://mytaskapp.com/invite?project=${projectId}&token=${Math.random().toString(36).substr(2, 8)}`;
-      document.getElementById("inviteLink").value = link;
-      document.getElementById("inviteModal").style.display = "flex";
+      const link = `https://yourapp.com/join?project=${currentProjectId}&token=${Math.random().toString(36).substr(2, 8)}`;
+      const input = document.getElementById('inviteLink');
+      input.value = link;
+      input.select();
+      navigator.clipboard.writeText(link).then(() => {
+        showNotification('Ссылка скопирована!');
+      });
+      document.getElementById('inviteModal').style.display = 'flex';
     }
 
     function closeInviteModal() {
-      document.getElementById("inviteModal").style.display = "none";
-    }
-
-    function showMembers() {
-      const members = [
-        { name: "Иван Иванов", isManager: true },
-        { name: "Петр Петров", isManager: false },
-        { name: "Анна Смирнова", isManager: false }
-      ];
-
-      const list = document.getElementById("membersList");
-      list.innerHTML = "";
-      members.forEach(member => {
-        const p = document.createElement("p");
-        p.textContent = member.name + (member.isManager ? " (менеджер)" : "");
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "Удалить";
-        delBtn.onclick = () => alert(`Удалить ${member.name}`);
-        const toggleManagerBtn = document.createElement("button");
-        toggleManagerBtn.textContent = member.isManager ? "Сделать не менеджером" : "Сделать менеджером";
-        toggleManagerBtn.onclick = () => toggleManager(member);
-        p.appendChild(delBtn);
-        p.appendChild(toggleManagerBtn);
-        list.appendChild(p);
-      });
-      document.getElementById("membersModal").style.display = "flex";
-    }
-
-    function toggleManager(member) {
-      member.isManager = !member.isManager;
-      showMembers();
+      document.getElementById('inviteModal').style.display = 'none';
     }
 
     function closeMembersModal() {
-      document.getElementById("membersModal").style.display = "none";
+      document.getElementById('membersModal').style.display = 'none';
     }
 
-    function addTask(button, columnName) {
-      const taskId = `task${Math.floor(Math.random() * 1000)}`;
-      const task = document.createElement("div");
-      task.classList.add("task");
-      task.id = taskId;
-      task.draggable = true;
-      task.ondragstart = drag;
-      task.onclick = () => redirectToTask(taskId);
-      task.innerHTML = `
-        <p class="task-title">Новая задача</p>
-        <p><strong>Приоритет:</strong> Средний</p>
-        <p><strong>Дедлайн:</strong> Не указан</p>
-        <p class="task-assignee">Исполнитель: Не назначен</p>
-      `;
-      const column = button.closest(".column");
-      column.insertBefore(task, button);
+    function closeModal() {
+      document.getElementById('taskModal').style.display = 'none';
     }
 
     function redirectToTask(taskId) {
-      window.location.href = `task.html?id=${taskId}`;
+      window.location.href = `task.html?id=${taskId}&project=${currentProjectId}`;
+    }
+
+    async function archiveProject() {
+      showLoading();
+      try {
+        await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}/archive`, { method: 'POST' });
+        showNotification('Проект архивирован');
+      } catch (error) {
+        console.error('Ошибка архивации:', error);
+        showNotification('Ошибка архивации', 'error');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function deleteProject() {
+      if (confirm('Вы уверены, что хотите удалить проект?')) {
+        showLoading();
+        try {
+          await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}`, { method: 'DELETE' });
+          window.location.href = '/projects';
+        } catch (error) {
+          console.error('Ошибка удаления:', error);
+          showNotification('Ошибка удаления проекта', 'error');
+        } finally {
+          hideLoading();
+        }
+      }
+    }
+
+    // Переключение вкладок
+    function showTab(tabId) {
+      const tabs = document.querySelectorAll('.tab-content');
+      const buttons = document.querySelectorAll('.tab-button');
+
+      tabs.forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.id === tabId) {
+          tab.classList.add('active');
+        }
+      });
+
+      buttons.forEach(button => {
+        button.classList.remove('active');
+        if (button.getAttribute('onclick').includes(tabId)) {
+          button.classList.add('active');
+        }
+      });
     }
   </script>
-
 </body>
 </html>

@@ -18,6 +18,17 @@ public interface ProjectsRepository extends JpaRepository<ProjectEntity, UUID> {
        join ProjectMemberEntity pm on p.id = pm.projectId
        join UserEntity u on pm.userId = u.id
        where u.email = :email
+       and p.status = 'active'
     """)
-    List<DashboardDto> findAllUserProjectsByEmail(@Param("email")String email);
+    List<DashboardDto> findAllActiveUserProjectsByEmail(@Param("email")String email);
+
+    @Query(value = """
+       select new com.toddler.dto.DashboardDto(p.id, p.name, p.description, pm.role)
+       from ProjectEntity p
+       join ProjectMemberEntity pm on p.id = pm.projectId
+       join UserEntity u on pm.userId = u.id
+       where u.email = :email
+       and p.status = 'archive'
+    """)
+    List<DashboardDto> findAllArchiveUserProjectsByEmail(@Param("email")String email);
 }

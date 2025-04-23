@@ -30,6 +30,24 @@
       margin: 0;
     }
 
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .header-buttons button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .header-buttons button:hover {
+      background-color: #0056b3;
+    }
+
     .task-details {
       background-color: #ffffff;
       padding: 20px;
@@ -56,11 +74,11 @@
       font-weight: bold;
     }
 
-    .task-comments, .task-time-history {
+    .task-comments, .task-time-history, .task-status-history {
       margin-top: 30px;
     }
 
-    .comment-box, .time-history {
+    .comment-box, .time-history, .status-history {
       background-color: #f9f9f9;
       padding: 15px;
       border-radius: 8px;
@@ -91,12 +109,15 @@
       background-color: #0056b3;
     }
 
-    .time-history p {
+    .time-history p,
+    .status-history p {
       font-size: 14px;
       color: #333;
+      margin: 5px 0;
     }
 
-    .time-history span {
+    .time-history span,
+    .status-history span {
       font-weight: bold;
     }
 
@@ -130,52 +151,131 @@
 
   <div class="container">
     <div class="header">
-      <h1>Задача "Задача 1"</h1>
-      <button class="button">Сохранить изменения</button>
-    </div>
-
-    <!-- Детальная информация о задаче -->
-    <div class="task-details">
-      <h2>Детали задачи</h2>
-      <div class="task-info">
-        <p><label>Название:</label> Задача 1</p>
-        <p><label>Описание:</label> Это описание задачи, которое объясняет ее суть.</p>
-        <p><label>Исполнитель:</label> Иван Иванов</p>
-        <p><label>Приоритет:</label> Высокий</p>
-        <p><label>Дедлайн:</label> 2025-04-15</p>
+      <h1 id="task-title">Загрузка...</h1>
+      <div class="header-buttons">
+        <button onclick="saveChanges()">Сохранить изменения</button>
+        <button style="background-color: #6c757d;" onclick="archiveTask()">Архивировать</button>
+        <button style="background-color: #dc3545;" onclick="deleteTask()">Удалить</button>
       </div>
     </div>
 
-    <!-- Комментарии -->
+    <div class="task-details">
+      <h2>Детали задачи</h2>
+      <div class="task-info" id="task-info"></div>
+    </div>
+
+    <div class="task-status-history">
+      <h3>История статусов задачи</h3>
+      <div class="status-history" id="status-history"></div>
+    </div>
+
     <div class="task-comments">
       <div class="comment-box">
         <h3>Добавить комментарий</h3>
-        <textarea placeholder="Напишите ваш комментарий здесь..." rows="4"></textarea>
-        <button>Добавить комментарий</button>
+        <textarea id="comment-text" placeholder="Напишите ваш комментарий здесь..." rows="4"></textarea>
+        <button onclick="addComment()">Добавить комментарий</button>
       </div>
       <div class="comment-box">
         <h3>Комментарии:</h3>
-        <p><strong>Иван Иванов:</strong> Начал работать над задачей, ожидаю дополнительных материалов.</p>
-        <p><strong>Петр Петров:</strong> Проблема решена, задача выполнена.</p>
+        <div id="comments-list"></div>
       </div>
     </div>
-
-    <!-- История времени -->
-    <div class="task-time-history">
-      <h3>История времени</h3>
-      <div class="time-history">
-        <p><span>2025-03-26 10:00-12:00</span> — Работал над задачей, анализировал требования.</p>
-        <p><span>2025-03-27 14:00-16:00</span> — Реализовал функциональность.</p>
-      </div>
-    </div>
-
-    <!-- Таймер -->
-    <div class="timer">
-      <p>Потраченное время: 04:00:00</p>
-      <button>Начать/Остановить таймер</button>
-    </div>
-
   </div>
 
+<script>
+  const taskId = 1; // пример: ID задачи
+  const baseUrl = "http://localhost:8080/api/v1";
+
+  document.addEventListener("DOMContentLoaded", loadTaskData);
+
+  async function loadTaskData() {
+    try {
+      const response = await fetch(`${baseUrl}/tasks/${taskId}`);
+      const data = await response.json();
+
+      // Заполняем заголовок
+      document.getElementById("task-title").textContent = `Задача "${data.title}"`;
+
+      // Детали задачи
+      document.getElementById("task-info").innerHTML = `
+        <p><label>Название:</label> ${data.title}</p>
+        <p><label>Описание:</label> ${data.description}</p>
+        <p><label>Исполнитель:</label> ${data.assignee}</p>
+        <p><label>Приоритет:</label> ${data.priority}</p>
+        <p><label>Дедлайн:</label> ${data.deadline}</p>
+      `;
+
+      // История статусов
+      document.getElementById("status-history").innerHTML = data.statusHistory.map(item =>
+        `<p><span>${item.status}</span> — ${item.timestamp}, Исполнитель: ${item.assignee || "Не назначено"}</p>`
+      ).join("");
+
+      // Комментарии
+      document.getElementById("comments-list").innerHTML = data.comments.map(comment =>
+        `<p><strong>${comment.author}:</strong> ${comment.text}</p>`
+      ).join("");
+
+    } catch (err) {
+      console.error("Ошибка при загрузке задачи", err);
+    }
+  }
+
+  async function addComment() {
+    const text = document.getElementById("comment-text").value.trim();
+    if (!text) return;
+
+    try {
+      await fetch(`${baseUrl}/tasks/${taskId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      document.getElementById("comment-text").value = "";
+      loadTaskData();
+    } catch (err) {
+      console.error("Ошибка при добавлении комментария", err);
+    }
+  }
+
+  async function saveChanges() {
+    // Здесь можно расширить до редактирования всех полей
+    try {
+      await fetch(`${baseUrl}/tasks/${taskId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Задача 1 (обновлена)",
+          description: "Описание обновлено с фронта"
+          // добавь поля по необходимости
+        })
+      });
+      alert("Задача обновлена");
+      loadTaskData();
+    } catch (err) {
+      console.error("Ошибка при сохранении", err);
+    }
+  }
+
+  async function archiveTask() {
+    try {
+      await fetch(`${baseUrl}/tasks/${taskId}/archive`, { method: "PUT" });
+      alert("Задача архивирована");
+      loadTaskData();
+    } catch (err) {
+      console.error("Ошибка при архивировании", err);
+    }
+  }
+
+  async function deleteTask() {
+    if (!confirm("Точно удалить задачу?")) return;
+    try {
+      await fetch(`${baseUrl}/tasks/${taskId}`, { method: "DELETE" });
+      alert("Задача удалена");
+      location.href = "/"; // например, возвращаемся на главную
+    } catch (err) {
+      console.error("Ошибка при удалении", err);
+    }
+  }
+</script>
 </body>
 </html>

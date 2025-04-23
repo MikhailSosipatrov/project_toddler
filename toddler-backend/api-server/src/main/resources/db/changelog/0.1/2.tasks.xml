@@ -47,7 +47,7 @@
 
         <sql>
             ALTER TABLE tasks
-                ADD CONSTRAINT status_check CHECK (status IN ('TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'));
+                ADD CONSTRAINT status_check CHECK (status IN ('TODO', 'IN_PROGRESS', 'DONE', 'TEST'));
         </sql>
 
         <sql>
@@ -107,6 +107,7 @@
             <column name="created_at" type="TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
+            <column name="updated_at" type="TIMESTAMP"/>
         </createTable>
 
         <addForeignKeyConstraint
@@ -125,10 +126,6 @@
                 referencedColumnNames="id"
                 onDelete="CASCADE"/>
 
-        <sql>
-            ALTER TABLE task_comments
-                ALTER COLUMN created_at SET DEFAULT NOW();
-        </sql>
     </changeSet>
 
     <changeSet id="7.notifications" author="m.sosipatrov">
@@ -160,6 +157,36 @@
             ALTER TABLE notifications
                 ALTER COLUMN created_at SET DEFAULT NOW();
         </sql>
+    </changeSet>
+
+    <changeSet id="1" author="your_name">
+        <createTable tableName="task_status_history">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="task_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="status_entered_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="status_left_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="task_status_history"
+                baseColumnNames="task_id"
+                constraintName="fk_task_status_history_task_id"
+                referencedTableName="tasks"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
     </changeSet>
 
     <changeSet id="8.task_files" author="m.sosipatrov">
@@ -201,41 +228,5 @@
             ALTER TABLE task_attachments
                 ALTER COLUMN uploaded_at SET DEFAULT NOW();
         </sql>
-    </changeSet>
-
-    <changeSet id="1" author="your_name">
-        <createTable tableName="task_status_history">
-            <!-- Уникальный идентификатор записи -->
-            <column name="id" type="UUID">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-
-            <!-- Идентификатор задачи -->
-            <column name="task_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-
-            <!-- Статус задачи -->
-            <column name="status" type="VARCHAR(50)">
-                <constraints nullable="false"/>
-            </column>
-
-            <!-- Время, когда задача вошла в статус -->
-            <column name="status_entered_at" type="TIMESTAMP">
-                <constraints nullable="false"/>
-            </column>
-
-            <!-- Время, когда задача покинула статус -->
-            <column name="status_left_at" type="TIMESTAMP"/>
-        </createTable>
-
-        <!-- Добавление внешнего ключа на таблицу tasks -->
-        <addForeignKeyConstraint
-                baseTableName="task_status_history"
-                baseColumnNames="task_id"
-                constraintName="fk_task_status_history_task_id"
-                referencedTableName="tasks"
-                referencedColumnNames="id"
-                onDelete="CASCADE"/>
     </changeSet>
 </databaseChangeLog>

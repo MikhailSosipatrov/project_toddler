@@ -37,6 +37,27 @@
     .button:hover {
       background-color: #0056b3;
     }
+    .tabs {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+    }
+    .tab-button {
+      padding: 10px 20px;
+      background-color: #e0e0e0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .tab-button.active {
+      background-color: #007bff;
+      color: white;
+    }
+    .tab-button:hover {
+      background-color: #0056b3;
+      color: white;
+    }
     .filters {
       margin: 20px 0;
       display: flex;
@@ -100,6 +121,12 @@
       border: 1px solid #ccc;
       border-radius: 5px;
     }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -118,11 +145,20 @@
       <button class="button" onclick="toggleForm()">Отмена</button>
     </div>
 
+    <div class="tabs">
+      <button class="tab-button active" onclick="showTab('active-projects')">Активные проекты</button>
+      <button class="tab-button" onclick="showTab('archived-projects')">Архив</button>
+    </div>
+
     <div class="search-bar">
       <input type="text" id="search" placeholder="Поиск по названию проекта" onkeyup="searchProjects()">
     </div>
 
-    <div class="projects-list" id="projects-list">
+    <div id="active-projects" class="tab-content active">
+      <div class="projects-list" id="active-projects-list"></div>
+    </div>
+    <div id="archived-projects" class="tab-content">
+      <div class="projects-list" id="archived-projects-list"></div>
     </div>
   </div>
 
@@ -132,23 +168,37 @@
 
       if (!token) {
         alert("Вы не авторизованы!");
-        window.location.href = "/login.html";
+        window.location.href = "login.html";
         return;
       }
 
       try {
-        // Получаем проекты
-        const projRes = await fetch("http://localhost:8080/api/v1/dashboard", {
+        // Получаем активные проекты
+        const activeRes = await fetch("http://localhost:8080/api/v1/dashboard", {
           headers: {
             "Authorization": "Bearer " + token
           }
         });
 
-        if (projRes.ok) {
-          const projects = await projRes.json();
-          renderProjects(projects);
+        if (activeRes.ok) {
+          const activeProjects = await activeRes.json();
+          renderProjects(activeProjects, 'active-projects-list');
         } else {
-          alert("Ошибка получения проектов");
+          alert("Ошибка получения активных проектов");
+        }
+
+        // Получаем архивированные проекты
+        const archiveRes = await fetch("http://localhost:8080/api/v1/dashboard/archive", {
+          headers: {
+            "Authorization": "Bearer " + token
+          }
+        });
+
+        if (archiveRes.ok) {
+          const archivedProjects = await archiveRes.json();
+          renderProjects(archivedProjects, 'archived-projects-list');
+        } else {
+          alert("Ошибка получения архивированных проектов");
         }
 
       } catch (error) {
@@ -157,8 +207,8 @@
     });
 
     // Функция для отображения проектов
-    function renderProjects(projects) {
-      const container = document.getElementById("projects-list");
+    function renderProjects(projects, containerId) {
+      const container = document.getElementById(containerId);
       container.innerHTML = ""; // очищаем список
 
       projects.forEach(project => {
@@ -167,8 +217,7 @@
         card.innerHTML = `
           <h3>${project.name}</h3>
           <p>${project.description}</p>
-          <p><strong>Статус:</strong> ${project.status}</p>
-          <a href="/project/${project.id}" class="view-button">Перейти в проект</a>
+          <a href="/html-frontend/project.html?id=${project.uuid}" class="view-button">Перейти в проект</a>
         `;
         container.appendChild(card);
       });
@@ -177,7 +226,8 @@
     // Функция для поиска проектов по названию
     function searchProjects() {
       let input = document.getElementById("search").value.toLowerCase();
-      let projects = document.querySelectorAll(".project-card");
+      const activeTab = document.querySelector('.tab-content.active');
+      const projects = activeTab.querySelectorAll(".project-card");
 
       projects.forEach(project => {
         let title = project.querySelector("h3").innerText.toLowerCase();
@@ -217,14 +267,38 @@
 
         if (res.ok) {
           const newProject = await res.json();
-          renderProjects([newProject]);  // Обновляем список с новым проектом
-          toggleForm();  // Закрываем форму
+          renderProjects([newProject], 'active-projects-list'); // Обновляем список активных проектов
+          toggleForm(); // Закрываем форму
         } else {
           alert("Ошибка создания проекта.");
         }
       } catch (error) {
         console.error("Ошибка при создании проекта:", error);
       }
+    }
+
+    // Функция для переключения вкладок
+    function showTab(tabId) {
+      const tabs = document.querySelectorAll('.tab-content');
+      const buttons = document.querySelectorAll('.tab-button');
+
+      tabs.forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.id === tabId) {
+          tab.classList.add('active');
+        }
+      });
+
+      buttons.forEach(button => {
+        button.classList.remove('active');
+        if (button.getAttribute('onclick').includes(tabId)) {
+          button.classList.add('active');
+        }
+      });
+
+      // Сбрасываем поиск при переключении вкладки
+      document.getElementById("search").value = "";
+      searchProjects();
     }
   </script>
 

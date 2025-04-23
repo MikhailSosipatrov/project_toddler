@@ -35,6 +35,9 @@
             <column name="name" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
+            <column name="status" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
             <column name="description" type="TEXT"/>
             <column name="owner_id" type="UUID">
                 <constraints nullable="false"/>

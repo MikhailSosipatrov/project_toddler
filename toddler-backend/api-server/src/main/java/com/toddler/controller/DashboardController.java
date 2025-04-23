@@ -19,9 +19,19 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping("/dashboard")
-    public ResponseEntity<List<DashboardDto>> dashboard(HttpServletRequest request) {
+    public ResponseEntity<List<DashboardDto>> dashboardActive(HttpServletRequest request) {
         try {
-            return ResponseEntity.ok().body(dashboardService.getDashboardProjects(request));
+            return ResponseEntity.ok().body(dashboardService.getDashboardActiveProjects(request));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/dashboard/archive")
+    public ResponseEntity<List<DashboardDto>> dashboardArchive(HttpServletRequest request) {
+        try {
+            return ResponseEntity.ok().body(dashboardService.getDashboardArchiveProjects(request));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();

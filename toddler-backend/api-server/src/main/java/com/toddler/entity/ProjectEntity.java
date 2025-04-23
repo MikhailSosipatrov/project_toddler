@@ -33,6 +33,9 @@ public class ProjectEntity {
     @Column(name = "owner_id", nullable = false)
     private UUID ownerId;
 
+    @Column(name = "status", nullable = false)
+    private String status;
+
     @CreatedDate
     @Column(name = "created_at")
     private LocalDateTime createdAt;
