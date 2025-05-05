@@ -48,6 +48,30 @@
       background-color: #0056b3;
     }
 
+    .header-buttons button.archive-btn {
+      background-color: #6c757d;
+    }
+
+    .header-buttons button.archive-btn:hover {
+      background-color: #5a6268;
+    }
+
+    .header-buttons button.delete-btn {
+      background-color: #dc3545;
+    }
+
+    .header-buttons button.delete-btn:hover {
+      background-color: #c82333;
+    }
+
+    .header-buttons button.cancel-btn {
+      background-color: #6c757d;
+    }
+
+    .header-buttons button.cancel-btn:hover {
+      background-color: #5a6268;
+    }
+
     .task-details {
       background-color: #ffffff;
       padding: 20px;
@@ -72,6 +96,15 @@
 
     .task-info label {
       font-weight: bold;
+    }
+
+    .task-info input, .task-info select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
     }
 
     .task-comments, .task-time-history, .task-status-history {
@@ -135,33 +168,86 @@
 
     .timer button {
       padding: 10px 20px;
-      background-color: #ff5722;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
 
-    .timer button:hover {
+    .timer button.start-btn {
+      background-color: #28a745;
+    }
+
+    .timer button.start-btn:hover {
+      background-color: #218838;
+    }
+
+    .timer button.stop-btn {
+      background-color: #ff5722;
+    }
+
+    .timer button.stop-btn:hover {
       background-color: #e64a19;
+    }
+
+    .timer button:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .timer .elapsed-time {
+      font-size: 16px;
+      color: #333;
+      margin-right: 20px;
+    }
+
+    #notification {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      border-radius: 5px;
+      color: white;
+      z-index: 1000;
+    }
+
+    #notification.error {
+      background-color: #dc3545;
     }
   </style>
 </head>
 <body>
-
+  <div id="notification"></div>
   <div class="container">
     <div class="header">
       <h1 id="task-title">Загрузка...</h1>
       <div class="header-buttons">
-        <button onclick="saveChanges()">Сохранить изменения</button>
-        <button style="background-color: #6c757d;" onclick="archiveTask()">Архивировать</button>
-        <button style="background-color: #dc3545;" onclick="deleteTask()">Удалить</button>
+        <button id="edit-task-btn" onclick="editTask()">Редактировать задачу</button>
+        <button id="save-task-btn" onclick="saveChanges()" style="display: none;">Сохранить изменения</button>
+        <button id="cancel-task-btn" class="cancel-btn" onclick="cancelEdit()" style="display: none;">Отмена</button>
+        <button onclick="showReport()">Показать отчет</button>
+        <button class="archive-btn" onclick="archiveTask()">Архивировать</button>
+        <button class="delete-btn" onclick="deleteTask()">Удалить</button>
       </div>
     </div>
 
     <div class="task-details">
       <h2>Детали задачи</h2>
       <div class="task-info" id="task-info"></div>
+      <div class="timer">
+        <p>Таймер</p>
+        <div>
+          <span class="elapsed-time" id="elapsed-time">Прошло: 00:00:00</span>
+          <button class="start-btn" id="start-timer-btn" onclick="startTimer()">Запустить таймер</button>
+          <button class="stop-btn" id="stop-timer-btn" onclick="stopTimer()">Остановить таймер</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="task-time-history">
+      <h3>История времени</h3>
+      <div class="time-history" id="time-history"></div>
     </div>
 
     <div class="task-status-history">
@@ -182,100 +268,336 @@
     </div>
   </div>
 
-<script>
-  const taskId = 1; // пример: ID задачи
-  const baseUrl = "http://localhost:8080/api/v1";
+  <script>
+    const taskId = getQueryParam('id');
+    const projectId = getQueryParam('project');
+    const baseUrl = "http://localhost:8080/api/v1";
+    const token = sessionStorage.getItem("accessToken");
+    let timerInterval = null;
+    let currentElapsedSeconds = 0;
+    let taskData = null; // Хранит исходные данные задачи для отмены редактирования
+    let isEditing = false;
 
-  document.addEventListener("DOMContentLoaded", loadTaskData);
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
 
-  async function loadTaskData() {
-    try {
-      const response = await fetch(`${baseUrl}/tasks/${taskId}`);
-      const data = await response.json();
+    window.onload = () => {
+      if (!token) {
+        alert("Вы не авторизованы!");
+        window.location.href = "login.html";
+        return;
+      }
+      if (!taskId || !projectId) {
+        alert("ID задачи или проекта не указан!");
+        window.location.href = "project.html";
+        return;
+      }
+      loadTaskData();
+    };
 
-      // Заполняем заголовок
-      document.getElementById("task-title").textContent = `Задача "${data.title}"`;
+    function getQueryParam(param) {
+      return new URLSearchParams(window.location.search).get(param);
+    }
 
-      // Детали задачи
+    function showReport() {
+    if (taskId) {
+      window.location.href = `taskReport.html?id=${taskId}`;
+    } else {
+      showNotification('ID проекта не определен', 'error');
+    }
+  }
+
+    function showNotification(message, type = 'error') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = type;
+      notification.style.display = 'block';
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 3000);
+    }
+
+    function formatElapsedTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${padZero(hours)}:${padZero(minutes)}:${padZero(secs)}`;
+    }
+
+    function padZero(num) {
+      return num < 10 ? `0${num}` : num;
+    }
+
+    async function fetchTimerElapsedTime() {
+      try {
+        const response = await fetch(`${baseUrl}/tasks/${taskId}/time/active`, { headers });
+        console.log('Fetch timer response status:', response.status);
+        if (!response.ok) {
+          if (response.status === 404) {
+            currentElapsedSeconds = 0;
+            document.getElementById('elapsed-time').textContent = 'Прошло: 00:00:00';
+            document.getElementById('start-timer-btn').disabled = false;
+            return false;
+          }
+          throw new Error(`Ошибка получения времени таймера: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Fetch timer response data:', data);
+        currentElapsedSeconds = data.elapsedTime;
+        document.getElementById('elapsed-time').textContent = `Прошло: ${formatElapsedTime(currentElapsedSeconds)}`;
+        return true;
+      } catch (err) {
+        console.error("Ошибка при получении времени таймера:", err);
+        return false;
+      }
+    }
+
+    function startTimerInterval() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+      timerInterval = setInterval(async () => {
+        const hasActiveTimer = await fetchTimerElapsedTime();
+        if (hasActiveTimer) {
+          currentElapsedSeconds++;
+          document.getElementById('elapsed-time').textContent = `Прошло: ${formatElapsedTime(currentElapsedSeconds)}`;
+        } else {
+          clearTimerInterval();
+        }
+      }, 1000);
+      console.log('Timer interval started');
+    }
+
+    function clearTimerInterval() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        currentElapsedSeconds = 0;
+        document.getElementById('elapsed-time').textContent = 'Прошло: 00:00:00';
+        document.getElementById('start-timer-btn').disabled = false;
+        console.log('Timer interval cleared');
+      }
+    }
+
+    async function loadTaskData() {
+      try {
+        const hasActiveTimer = await fetchTimerElapsedTime();
+        const response = await fetch(`${baseUrl}/tasks/${taskId}`, { headers });
+        if (!response.ok) throw new Error(`Ошибка загрузки задачи: ${response.status}`);
+        taskData = await response.json();
+        console.log('Task data loaded:', taskData);
+
+        document.getElementById("task-title").textContent = `Задача "${taskData.title || 'Без названия'}"`;
+
+        document.getElementById("task-info").innerHTML = `
+          <p><label>Название:</label> <span id="task-title-text">${taskData.title || 'Без названия'}</span></p>
+          <p><label>Описание:</label> <span id="task-description-text">${taskData.description || 'Не указано'}</span></p>
+          <p><label>Исполнитель:</label> <span id="task-assignee-text">${taskData.assignee ? taskData.assignee.firstName + ' ' + taskData.assignee.lastName + '('+taskData.assignee.userName+')': 'Не назначен'}</span></p>
+          <p><label>Приоритет:</label> <span id="task-priority-text">${taskData.priority || 'Не указан'}</span></p>
+          <p><label>Дедлайн:</label> <span id="task-deadline-text">${taskData.deadline || 'Не указан'}</span></p>
+        `;
+
+        document.getElementById("status-history").innerHTML = taskData.statusHistory?.length > 0
+          ? taskData.statusHistory.map(item =>
+              `<p><span>${item.status}</span> — ${item.timestamp}, Исполнитель: ${item.assignee || "Не назначено"}</p>`
+            ).join("")
+          : "<p>История статусов отсутствует</p>";
+
+        document.getElementById("comments-list").innerHTML = taskData.comments?.length > 0
+          ? taskData.comments.map(comment =>
+              `<p><strong>${comment.author}:</strong> ${comment.text}</p>`
+            ).join("")
+          : "<p>Комментарии отсутствуют</p>";
+
+        document.getElementById("time-history").innerHTML = taskData.timeLogs?.length > 0
+          ? taskData.timeLogs.map(log =>
+              `<p><span>${log.startTime}</span> — ${log.endTime ? log.endTime : 'В процессе'}, Пользователь: ${log.userName || 'Неизвестно'}</p>`
+            ).join("")
+          : "<p>История времени отсутствует</p>";
+
+        document.getElementById("start-timer-btn").disabled = hasActiveTimer;
+
+        if (hasActiveTimer) {
+          startTimerInterval();
+        } else {
+          clearTimerInterval();
+        }
+
+        // Сброс режима редактирования
+        isEditing = false;
+        document.getElementById("edit-task-btn").style.display = 'block';
+        document.getElementById("save-task-btn").style.display = 'none';
+        document.getElementById("cancel-task-btn").style.display = 'none';
+      } catch (err) {
+        console.error("Ошибка при загрузке задачи:", err);
+        alert("Ошибка при загрузке задачи");
+      }
+    }
+
+    function editTask() {
+      if (isEditing) return;
+
+      isEditing = true;
+      document.getElementById("edit-task-btn").style.display = 'none';
+      document.getElementById("save-task-btn").style.display = 'block';
+      document.getElementById("cancel-task-btn").style.display = 'block';
+
       document.getElementById("task-info").innerHTML = `
-        <p><label>Название:</label> ${data.title}</p>
-        <p><label>Описание:</label> ${data.description}</p>
-        <p><label>Исполнитель:</label> ${data.assignee}</p>
-        <p><label>Приоритет:</label> ${data.priority}</p>
-        <p><label>Дедлайн:</label> ${data.deadline}</p>
+        <p><label>Название:</label> <input id="task-title-input" value="${taskData.title || ''}"></p>
+        <p><label>Описание:</label> <input id="task-description-input" value="${taskData.description || ''}"></p>
+        <p><label>Исполнитель:</label> <input id="task-assignee-input" value="${taskData.assignee ? taskData.assignee.firstName + ' ' + taskData.assignee.lastName : ''}" disabled></p>
+        <p><label>Приоритет:</label> 
+          <select id="task-priority-input">
+            <option value="LOW" ${taskData.priority === 'LOW' ? 'selected' : ''}>Низкий</option>
+            <option value="MEDIUM" ${taskData.priority === 'MEDIUM' ? 'selected' : ''}>Средний</option>
+            <option value="HIGH" ${taskData.priority === 'HIGH' ? 'selected' : ''}>Высокий</option>
+          </select>
+        </p>
+        <p><label>Дедлайн:</label> <input id="task-deadline-input" type="date" value="${taskData.deadline || ''}"></p>
       `;
-
-      // История статусов
-      document.getElementById("status-history").innerHTML = data.statusHistory.map(item =>
-        `<p><span>${item.status}</span> — ${item.timestamp}, Исполнитель: ${item.assignee || "Не назначено"}</p>`
-      ).join("");
-
-      // Комментарии
-      document.getElementById("comments-list").innerHTML = data.comments.map(comment =>
-        `<p><strong>${comment.author}:</strong> ${comment.text}</p>`
-      ).join("");
-
-    } catch (err) {
-      console.error("Ошибка при загрузке задачи", err);
     }
-  }
 
-  async function addComment() {
-    const text = document.getElementById("comment-text").value.trim();
-    if (!text) return;
+    function cancelEdit() {
+      isEditing = false;
+      document.getElementById("edit-task-btn").style.display = 'block';
+      document.getElementById("save-task-btn").style.display = 'none';
+      document.getElementById("cancel-task-btn").style.display = 'none';
 
-    try {
-      await fetch(`${baseUrl}/tasks/${taskId}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-      });
-      document.getElementById("comment-text").value = "";
-      loadTaskData();
-    } catch (err) {
-      console.error("Ошибка при добавлении комментария", err);
+      // Восстановить исходные данные
+      document.getElementById("task-info").innerHTML = `
+        <p><label>Название:</label> <span id="task-title-text">${taskData.title || 'Без названия'}</span></p>
+        <p><label>Описание:</label> <span id="task-description-text">${taskData.description || 'Не указано'}</span></p>
+        <p><label>Исполнитель:</label> <span id="task-assignee-text">${taskData.assignee ? taskData.assignee.firstName + ' ' + taskData.assignee.lastName : 'Не назначен'}</span></p>
+        <p><label>Приоритет:</label> <span id="task-priority-text">${taskData.priority || 'Не указан'}</span></p>
+        <p><label>Дедлайн:</label> <span id="task-deadline-text">${taskData.deadline || 'Не указан'}</span></p>
+      `;
     }
-  }
 
-  async function saveChanges() {
-    // Здесь можно расширить до редактирования всех полей
-    try {
-      await fetch(`${baseUrl}/tasks/${taskId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "Задача 1 (обновлена)",
-          description: "Описание обновлено с фронта"
-          // добавь поля по необходимости
-        })
-      });
-      alert("Задача обновлена");
-      loadTaskData();
-    } catch (err) {
-      console.error("Ошибка при сохранении", err);
-    }
-  }
+    async function saveChanges() {
+      if (!isEditing) return;
 
-  async function archiveTask() {
-    try {
-      await fetch(`${baseUrl}/tasks/${taskId}/archive`, { method: "PUT" });
-      alert("Задача архивирована");
-      loadTaskData();
-    } catch (err) {
-      console.error("Ошибка при архивировании", err);
-    }
-  }
+      try {
+        const title = document.getElementById("task-title-input").value.trim();
+        const description = document.getElementById("task-description-input").value.trim();
+        const priority = document.getElementById("task-priority-input").value;
+        const deadline = document.getElementById("task-deadline-input").value;
 
-  async function deleteTask() {
-    if (!confirm("Точно удалить задачу?")) return;
-    try {
-      await fetch(`${baseUrl}/tasks/${taskId}`, { method: "DELETE" });
-      alert("Задача удалена");
-      location.href = "/"; // например, возвращаемся на главную
-    } catch (err) {
-      console.error("Ошибка при удалении", err);
+        if (!title) {
+          alert("Название задачи не может быть пустым");
+          return;
+        }
+
+        const response = await fetch(`${baseUrl}/tasks/${taskId}`, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({
+            title,
+            description,
+            priority,
+            deadline: deadline || null
+          })
+        });
+
+        if (!response.ok) throw new Error(`Ошибка сохранения изменений: ${response.status}`);
+        alert("Задача обновлена");
+        isEditing = false;
+        loadTaskData();
+      } catch (err) {
+        console.error("Ошибка при сохранении:", err);
+        alert("Ошибка при сохранении изменений");
+      }
     }
-  }
-</script>
+
+    async function startTimer() {
+      try {
+        const startResponse = await fetch(`${baseUrl}/tasks/${taskId}/time/start`, {
+          method: "POST",
+          headers
+        });
+        if (!startResponse.ok) throw new Error(`Ошибка запуска таймера: ${startResponse.status}`);
+        alert("Таймер запущен");
+        document.getElementById("start-timer-btn").disabled = true;
+        document.getElementById("stop-timer-btn").disabled = false;
+        await fetchTimerElapsedTime();
+        startTimerInterval();
+      } catch (err) {
+        console.error("Ошибка при запуске таймера:", err);
+        alert("Ошибка при запуске таймера");
+      }
+    }
+
+    async function stopTimer() {
+      try {
+        const stopResponse = await fetch(`${baseUrl}/tasks/${taskId}/time/stop`, {
+          method: "POST",
+          headers
+        });
+        if (!stopResponse.ok) throw new Error(`Ошибка остановки таймера: ${stopResponse.status}`);
+        alert("Таймер остановлен");
+        document.getElementById("start-timer-btn").disabled = false;
+        document.getElementById("stop-timer-btn").disabled = false;
+        clearTimerInterval();
+        await loadTaskData();
+      } catch (err) {
+        console.error("Ошибка при остановке таймера:", err);
+        alert("Ошибка при остановке таймера");
+      }
+    }
+
+    async function addComment() {
+      const text = document.getElementById("comment-text").value.trim();
+      if (!text) {
+        alert("Комментарий не может быть пустым");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${baseUrl}/tasks/${taskId}/comments`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ text })
+        });
+        if (!response.ok) throw new Error(`Ошибка добавления комментария: ${response.status}`);
+        document.getElementById("comment-text").value = "";
+        loadTaskData();
+      } catch (err) {
+        console.error("Ошибка при добавлении комментария:", err);
+        alert("Ошибка при добавлении комментария");
+      }
+    }
+
+    async function archiveTask() {
+      try {
+        const response = await fetch(`${baseUrl}/tasks/${taskId}/archive`, {
+          method: "PUT",
+          headers
+        });
+        if (!response.ok) throw new Error(`Ошибка архивирования задачи: ${response.status}`);
+        alert("Задача архивирована");
+        window.location.href = `project.html?id=${projectId}`;
+      } catch (err) {
+        console.error("Ошибка при архивировании:", err);
+        alert("Ошибка при архивировании задачи");
+      }
+    }
+
+    async function deleteTask() {
+      if (!confirm("Точно удалить задачу?")) return;
+      try {
+        const response = await fetch(`${baseUrl}/tasks/${taskId}`, {
+          method: "DELETE",
+          headers
+        });
+        if (!response.ok) throw new Error(`Ошибка удаления задачи: ${response.status}`);
+        alert("Задача удалена");
+        window.location.href = `project.html?id=${projectId}`;
+      } catch (err) {
+        console.error("Ошибка при удалении:", err);
+        alert("Ошибка при удалении задачи");
+      }
+    }
+  </script>
 </body>
 </html>

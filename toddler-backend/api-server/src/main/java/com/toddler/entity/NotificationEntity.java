@@ -16,13 +16,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "projects")
+@Table(name = "notifications")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @EntityListeners(value = {AuditingEntityListener.class})
-public class NotifiactionEntity {
+public class NotificationEntity {
     @Id
     @Column(nullable = false)
     private UUID id;

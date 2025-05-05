@@ -12,11 +12,37 @@
       padding: 0;
     }
 
+    nav {
+      background-color: #007bff;
+      padding: 10px 20px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    nav button {
+      padding: 8px 15px;
+      background-color: #ffffff;
+      color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    nav button:hover {
+      background-color: #e0e0e0;
+    }
+
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px 20px;
+      padding: 95px 20px 15px; /* Добавлен верхний отступ для панели */
       background-color: #fff;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
@@ -95,6 +121,13 @@
       border-radius: 8px;
       padding: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      min-height: 200px;
+      transition: background-color 0.2s;
+    }
+
+    .column.drag-over {
+      background-color: #f0f7ff;
+      border: 2px dashed #007bff;
     }
 
     .column h2 {
@@ -108,6 +141,12 @@
       margin-bottom: 10px;
       cursor: pointer;
       text-align: center;
+      transition: opacity 0.2s;
+      user-select: none;
+    }
+
+    .task.dragging {
+      opacity: 0.5;
     }
 
     .task p {
@@ -125,6 +164,15 @@
       font-size: 14px;
     }
 
+    .drag-placeholder {
+      background-color: #f0f0f0;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      height: 60px;
+      margin-bottom: 10px;
+      opacity: 0.8;
+    }
+
     .archived-tasks {
       padding: 20px;
     }
@@ -135,6 +183,7 @@
       padding: 15px;
       margin-bottom: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
     }
 
     .archived-task p {
@@ -280,6 +329,11 @@
   </style>
 </head>
 <body>
+  <nav>
+    <button onclick="window.location.href='dashboard.html'">Дашборд</button>
+    <button onclick="window.location.href='userSettings.html'">Профиль</button>
+    <button onclick="logout()">Выйти</button>
+  </nav>
   <div id="notification"></div>
   <div id="loading">
     <div>Загрузка...</div>
@@ -287,9 +341,9 @@
 
   <div class="top-bar">
     <div class="project-description">
-      <button onclick="generateInviteLink()">Пригласить участника</button>
-      <button onclick="showMembers()">Показать участников</button>
-      <button onclick="location.href='report.html'">Показать отчет</button>
+      <button class="invite-btn" onclick="generateInviteLink()">Пригласить участника</button>
+      <button class="members-btn" onclick="showMembers()">Показать участников</button>
+      <button onclick="showReport()">Показать отчет</button>
     </div>
     <h1 id="projectTitle"></h1>
     <div class="project-actions">
@@ -306,19 +360,19 @@
 
   <div id="active-tasks" class="tab-content active">
     <div class="board" id="board">
-      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
         <h2>To Do</h2>
-        <button class="add-task-btn" data-i18n="addTask" onclick="addTask(this, 'TO_DO')">+ Добавить задачу</button>
+        <button class="add-task-btn" data-i18n="addTask" onclick="addTask(this, 'TODO')">+ Добавить задачу</button>
       </div>
-      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
         <h2>In Progress</h2>
         <button class="add-task-btn" data-i18n="addTask" onclick="addTask(this, 'IN_PROGRESS')">+ Добавить задачу</button>
       </div>
-      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
         <h2>Test</h2>
         <button class="add-task-btn" data-i18n="addTask" onclick="addTask(this, 'TEST')">+ Добавить задачу</button>
       </div>
-      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
         <h2>Done</h2>
         <button class="add-task-btn" data-i18n="addTask" onclick="addTask(this, 'DONE')">+ Добавить задачу</button>
       </div>
@@ -373,6 +427,7 @@
       <select id="newRole">
         <option value="MEMBER">Участник</option>
         <option value="ADMIN">Админ</option>
+        <option value="OWNER">Владелец</option>
       </select>
       <button onclick="saveRoleChange()">Сохранить</button>
       <button onclick="closeChangeRoleModal()">Закрыть</button>
@@ -401,9 +456,40 @@
   <script>
     let draggedTask = null;
     let currentProjectId = null;
+    let placeholder = null;
+    let currentUserRole = null;
+    const token = sessionStorage.getItem("accessToken");
+    const API_BASE_URL = 'http://localhost:8080/api/v1';
 
-    // Инициализация
+    // Получение ID текущего пользователя через запрос к /api/v1/user/profile
+    async function getCurrentUserId() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/user/profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch user profile');
+        }
+        const user = await response.json();
+        return user.id; // Предполагается, что API возвращает поле id
+      } catch (error) {
+        console.error('Ошибка получения userId:', error);
+        showNotification('Ошибка получения данных пользователя', 'error');
+        return null;
+      }
+    }
+
+    // Проверка токена и роли при загрузке страницы
     window.onload = () => {
+      if (!token) {
+        alert("Вы не авторизованы!");
+        window.location.href = "login.html";
+        return;
+      }
       const projectId = getQueryParam('id');
       if (projectId) {
         currentProjectId = projectId;
@@ -466,6 +552,14 @@
       }, 3000);
     }
 
+    function showReport() {
+      if (currentProjectId) {
+        window.location.href = `projectReport.html?projectId=${currentProjectId}`;
+      } else {
+        showNotification('ID проекта не определен', 'error');
+      }
+    }
+
     // Индикатор загрузки
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
@@ -479,14 +573,34 @@
     async function loadProjectData(projectId) {
       showLoading();
       try {
-        const response = await fetch(`http://localhost:8080/api/v1/projects/${projectId}`);
+        // Получаем ID текущего пользователя
+        const currentUserId = await getCurrentUserId();
+        if (!currentUserId) {
+          throw new Error('Не удалось определить ID текущего пользователя');
+        }
+
+        // Загружаем данные проекта
+        const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
         if (!response.ok) throw new Error('Ошибка загрузки проекта');
         const project = await response.json();
         window.projectMembers = project.members || [];
+
+        // Определяем роль текущего пользователя
+        const currentMember = window.projectMembers.find(member => member.user.id === currentUserId);
+        console.log('Моя роль: ' + (currentMember ? currentMember.role : 'MEMBER'));
+        currentUserRole = currentMember ? currentMember.role : 'MEMBER';
+
+        // Обновляем UI
         updateProjectUI(project);
+        restrictUIByRole();
       } catch (error) {
         console.error('Ошибка:', error);
-        showNotification('Ошибка загрузки проекта', 'error');
+        showNotification('Ошибка загрузки проекта: ' + error.message, 'error');
       } finally {
         hideLoading();
       }
@@ -496,7 +610,12 @@
     async function loadArchivedTasks(projectId) {
       showLoading();
       try {
-        const response = await fetch(`http://localhost:8080/api/v1/projects/${projectId}/archive`);
+        const response = await fetch(`${API_BASE_URL}/projects/${projectId}/archive`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
         if (!response.ok) throw new Error('Ошибка загрузки архивированных задач');
         const archivedTasks = await response.json();
         renderArchivedTasks(archivedTasks);
@@ -529,19 +648,46 @@
         taskElement.onclick = () => redirectToTask(task.id);
 
         const executorName = task.executor
-          ? `${task.executor.firstName} ${task.executor.lastName}`
+          ? `${task.executor.firstName} ${task.executor.lastName} ( ${task.executor.username})`
           : 'Не назначен';
 
+        console.log('Исполнитель:'+executorName)
         taskElement.innerHTML = `
           <p class="task-title">${task.name}</p>
           <p><strong>Приоритет:</strong> ${task.priority}</p>
           <p><strong>Дедлайн:</strong> ${task.deadline || 'Не указан'}</p>
-          <p class="task-assignee">Исполнитель: ${executorName}</p>
+          <p class="task-assignee">Исполнитель: ${executorName }</p>
           <p><strong>Статус:</strong> ${task.status}</p>
         `;
 
         container.appendChild(taskElement);
       });
+    }
+
+    // Ограничение UI по роли
+    function restrictUIByRole() {
+      const inviteBtn = document.querySelector('.invite-btn');
+      const membersBtn = document.querySelector('.members-btn');
+      const editBtn = document.querySelector('.edit-btn');
+      const archiveBtn = document.querySelector('.archive-btn');
+      const deleteBtn = document.querySelector('.delete-btn');
+      const addTaskButtons = document.querySelectorAll('.add-task-btn');
+
+      if (currentUserRole === 'MEMBER') {
+        // Скрываем кнопки, недоступные для MEMBER
+        inviteBtn.style.display = 'none';
+        membersBtn.style.display = 'none';
+        editBtn.style.display = 'none';
+        archiveBtn.style.display = 'none';
+        deleteBtn.style.display = 'none';
+        addTaskButtons.forEach(btn => btn.style.display = 'none');
+      } else if (currentUserRole === 'ADMIN') {
+        // ADMIN может всё, кроме архивации и удаления
+        archiveBtn.style.display = 'none';
+        deleteBtn.style.display = 'none';
+      } else if (currentUserRole === 'OWNER') {
+        // OWNER может всё, ничего не скрываем
+      }
     }
 
     function updateProjectUI(project) {
@@ -574,7 +720,7 @@
     // Поиск колонки по статусу
     function getColumnByStatus(status) {
       const statusMap = {
-        'TO_DO': 'To Do',
+        'TODO': 'To Do',
         'IN_PROGRESS': 'In Progress',
         'TEST': 'Test',
         'DONE': 'Done'
@@ -590,12 +736,13 @@
       taskElement.className = 'task';
       taskElement.draggable = true;
       taskElement.id = task.id;
-      taskElement.ondragstart = drag;
+      taskElement.ondragstart = dragStart;
+      taskElement.ondragend = dragEnd;
       taskElement.onclick = () => redirectToTask(task.id);
 
       const executorName = task.executor
-        ? `${task.executor.firstName} ${task.executor.lastName}`
-        : 'Не назначен';
+          ? `${task.executor.firstName} ${task.executor.lastName} (${task.executor.username})`
+          : 'Не назначен';
 
       taskElement.innerHTML = `
         <p class="task-title">${task.name}</p>
@@ -612,36 +759,141 @@
       event.preventDefault();
     }
 
-    function drag(event) {
-      draggedTask = event.target;
+    function dragStart(event) {
+      if (currentUserRole === 'MEMBER') {
+        showNotification('У вас нет прав для изменения статуса задач', 'error');
+        return;
+      }
+      draggedTask = event.target.closest('.task');
+      if (draggedTask) {
+        draggedTask.classList.add('dragging');
+        event.dataTransfer.setData('text/plain', draggedTask.id);
+      }
+    }
+
+    function dragEnd(event) {
+      if (draggedTask) {
+        draggedTask.classList.remove('dragging');
+        draggedTask.style.opacity = '1';
+        draggedTask = null;
+      }
+      if (placeholder) {
+        placeholder.remove();
+        placeholder = null;
+      }
+      document.querySelectorAll('.column').forEach(column => {
+        column.classList.remove('drag-over');
+      });
+    }
+
+    function dragEnter(event) {
+      event.preventDefault();
+      const column = event.currentTarget;
+      column.classList.add('drag-over');
+
+      if (!placeholder) {
+        placeholder = document.createElement('div');
+        placeholder.className = 'drag-placeholder';
+      }
+
+      if (placeholder.parentElement && placeholder.parentElement !== column) {
+        placeholder.remove();
+      }
+
+      const tasks = Array.from(column.querySelectorAll('.task:not(.dragging)'));
+      const addTaskBtn = column.querySelector('.add-task-btn');
+      let insertBeforeElement = addTaskBtn;
+      const mouseY = event.clientY;
+
+      for (const task of tasks) {
+        const rect = task.getBoundingClientRect();
+        if (mouseY < rect.top + rect.height / 2) {
+          insertBeforeElement = task;
+          break;
+        }
+      }
+
+      column.insertBefore(placeholder, insertBeforeElement);
+    }
+
+    function dragOver(event) {
+      event.preventDefault();
+      const column = event.currentTarget;
+
+      const tasks = Array.from(column.querySelectorAll('.task:not(.dragging)'));
+      const addTaskBtn = column.querySelector('.add-task-btn');
+      let insertBeforeElement = addTaskBtn;
+      const mouseY = event.clientY;
+
+      for (const task of tasks) {
+        const rect = task.getBoundingClientRect();
+        if (mouseY < rect.top + rect.height / 2) {
+          insertBeforeElement = task;
+          break;
+        }
+      }
+
+      if (placeholder && placeholder.parentElement === column) {
+        column.insertBefore(placeholder, insertBeforeElement);
+      }
+    }
+
+    function dragLeave(event) {
+      const column = event.currentTarget;
+      column.classList.remove('drag-over');
     }
 
     async function drop(event) {
       event.preventDefault();
-      if (draggedTask && event.currentTarget !== draggedTask.parentElement) {
-        const newStatus = getStatusByColumn(event.currentTarget);
-        await updateTaskStatus(draggedTask.id, newStatus);
-        event.currentTarget.insertBefore(draggedTask, event.currentTarget.querySelector('.add-task-btn'));
-      }
-    }
+      const column = event.currentTarget;
+      column.classList.remove('drag-over');
 
-    async function updateTaskStatus(taskId, newStatus) {
+      if (!draggedTask || !column.contains(event.target)) return;
+
+      const newStatus = getStatusByColumn(column);
+
       try {
-        await fetch(`http://localhost:8080/api/v1/tasks/${taskId}/status`, {
+        showLoading();
+        const response = await fetch(`${API_BASE_URL}/tasks/${draggedTask.id}/status`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({ status: newStatus })
         });
+
+        if (response.ok) {
+          showNotification('Статус задачи обновлен');
+          await loadProjectData(currentProjectId);
+        } else {
+          throw new Error('Ошибка обновления статуса');
+        }
       } catch (error) {
         console.error('Ошибка обновления статуса:', error);
         showNotification('Ошибка обновления статуса', 'error');
+      } finally {
+        cleanupDrag();
+        hideLoading();
       }
+    }
+
+    function cleanupDrag() {
+      if (draggedTask) {
+        draggedTask.style.opacity = '1';
+        draggedTask.classList.remove('dragging');
+      }
+      if (placeholder) {
+        placeholder.remove();
+        placeholder = null;
+      }
+      draggedTask = null;
     }
 
     // Вспомогательные функции
     function getStatusByColumn(column) {
       const statusMap = {
-        'To Do': 'TO_DO',
+        'To Do': 'TODO',
         'In Progress': 'IN_PROGRESS',
         'Test': 'TEST',
         'Done': 'DONE'
@@ -655,6 +907,10 @@
 
     // Управление задачами
     function addTask(button, status) {
+      if (currentUserRole === 'MEMBER') {
+        showNotification('У вас нет прав для создания задач', 'error');
+        return;
+      }
       const modal = document.getElementById('addTaskModal');
       modal.dataset.status = status;
       populateAssignees();
@@ -698,6 +954,10 @@
     }
 
     async function createTask() {
+      if (currentUserRole === 'MEMBER') {
+        showNotification('У вас нет прав для создания задач', 'error');
+        return;
+      }
       const name = document.getElementById('taskName').value;
       const description = document.getElementById('taskDescription').value;
       const priority = document.getElementById('taskPriority').value;
@@ -709,9 +969,12 @@
 
       showLoading();
       try {
-        const response = await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}/tasks`, {
+        const response = await fetch(`${API_BASE_URL}/projects/${currentProjectId}/tasks`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({
             name,
             description,
@@ -739,16 +1002,26 @@
 
     // Управление участниками
     function showMembers() {
+      if (currentUserRole === 'MEMBER') {
+        showNotification('У вас нет прав для просмотра участников', 'error');
+        return;
+      }
       const list = document.getElementById('membersList');
       list.innerHTML = '';
 
       window.projectMembers.forEach(member => {
         const p = document.createElement('p');
-        const fullName = `${member.user.firstName} ${member.user.lastName}`;
+        const fullName = `${member.user.firstName} ${member.user.lastName} (${member.user.username})`;
+        let buttons = '';
+        if (currentUserRole === 'ADMIN' || currentUserRole === 'OWNER') {
+          buttons = `
+            <button onclick="deleteMember('${member.user.id}')">Удалить</button>
+            <button onclick="changeRole('${member.user.id}')">Изменить роль</button>
+          `;
+        }
         p.innerHTML = `
           ${fullName} (${member.role})
-          <button onclick="deleteMember('${member.user.id}')">Удалить</button>
-          <button onclick="changeRole('${member.user.id}')">Изменить роль</button>
+          ${buttons}
         `;
         list.appendChild(p);
       });
@@ -757,10 +1030,18 @@
     }
 
     async function deleteMember(userId) {
+      if (currentUserRole !== 'ADMIN' && currentUserRole !== 'OWNER') {
+        showNotification('У вас нет прав для удаления участников', 'error');
+        return;
+      }
       showLoading();
       try {
-        await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}/members/${userId}`, {
-          method: 'DELETE'
+        await fetch(`${API_BASE_URL}/projects/${currentProjectId}/members/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
         });
         loadProjectData(currentProjectId);
         showNotification('Участник удален');
@@ -773,6 +1054,10 @@
     }
 
     function changeRole(userId) {
+      if (currentUserRole !== 'ADMIN' && currentUserRole !== 'OWNER') {
+        showNotification('У вас нет прав для изменения ролей', 'error');
+        return;
+      }
       const modal = document.getElementById('changeRoleModal');
       modal.dataset.userId = userId;
       const member = window.projectMembers.find(m => m.user.id === userId);
@@ -786,14 +1071,21 @@
     }
 
     async function saveRoleChange() {
+      if (currentUserRole !== 'ADMIN' && currentUserRole !== 'OWNER') {
+        showNotification('У вас нет прав для изменения ролей', 'error');
+        return;
+      }
       const userId = document.getElementById('changeRoleModal').dataset.userId;
       const newRole = document.getElementById('newRole').value;
 
       showLoading();
       try {
-        await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}/members/${userId}/role`, {
+        await fetch(`${API_BASE_URL}/projects/${currentProjectId}/members/${userId}/role`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({ role: newRole })
         });
         closeChangeRoleModal();
@@ -809,6 +1101,10 @@
 
     // Редактирование проекта
     function editProject() {
+      if (currentUserRole === 'MEMBER') {
+        showNotification('У вас нет прав для редактирования проекта', 'error');
+        return;
+      }
       const modal = document.getElementById('editProjectModal');
       document.getElementById('editProjectName').value = document.getElementById('projectTitle').textContent;
       modal.style.display = 'flex';
@@ -819,6 +1115,10 @@
     }
 
     async function saveProjectChanges() {
+      if (currentUserRole === 'MEMBER') {
+        showNotification('У вас нет прав для редактирования проекта', 'error');
+        return;
+      }
       const name = document.getElementById('editProjectName').value;
       const description = document.getElementById('editProjectDescription').value;
 
@@ -829,9 +1129,12 @@
 
       showLoading();
       try {
-        const response = await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}`, {
+        const response = await fetch(`${API_BASE_URL}/projects/${currentProjectId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({ name, description })
         });
 
@@ -852,7 +1155,11 @@
 
     // Остальные функции
     function generateInviteLink() {
-      const link = `https://yourapp.com/join?project=${currentProjectId}&token=${Math.random().toString(36).substr(2, 8)}`;
+      if (currentUserRole === 'MEMBER') {
+        showNotification('У вас нет прав для приглашения участников', 'error');
+        return;
+      }
+      const link = `http://localhost:8080/api/v1/invite/join/${currentProjectId}&token=${Math.random().toString(36).substr(2, 8)}`;
       const input = document.getElementById('inviteLink');
       input.value = link;
       input.select();
@@ -879,10 +1186,21 @@
     }
 
     async function archiveProject() {
+      if (currentUserRole !== 'OWNER') {
+        showNotification('У вас нет прав для архивации проекта', 'error');
+        return;
+      }
       showLoading();
       try {
-        await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}/archive`, { method: 'POST' });
+        await fetch(`${API_BASE_URL}/projects/${currentProjectId}/archive`, {
+          method: 'POST',
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
         showNotification('Проект архивирован');
+        window.location.href = 'dashboard.html';
       } catch (error) {
         console.error('Ошибка архивации:', error);
         showNotification('Ошибка архивации', 'error');
@@ -892,11 +1210,21 @@
     }
 
     async function deleteProject() {
+      if (currentUserRole !== 'OWNER') {
+        showNotification('У вас нет прав для удаления проекта', 'error');
+        return;
+      }
       if (confirm('Вы уверены, что хотите удалить проект?')) {
         showLoading();
         try {
-          await fetch(`http://localhost:8080/api/v1/projects/${currentProjectId}`, { method: 'DELETE' });
-          window.location.href = '/projects';
+          await fetch(`${API_BASE_URL}/projects/${currentProjectId}`, {
+            method: 'DELETE',
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            }
+          });
+          window.location.href = '/dashboard.html';
         } catch (error) {
           console.error('Ошибка удаления:', error);
           showNotification('Ошибка удаления проекта', 'error');
@@ -924,6 +1252,12 @@
           button.classList.add('active');
         }
       });
+    }
+
+    // Логика выхода
+    function logout() {
+      sessionStorage.removeItem("accessToken");
+      window.location.href = "login.html";
     }
   </script>
 </body>

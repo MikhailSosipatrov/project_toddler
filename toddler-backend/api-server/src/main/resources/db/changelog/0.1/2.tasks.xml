@@ -47,7 +47,7 @@
 
         <sql>
             ALTER TABLE tasks
-                ADD CONSTRAINT status_check CHECK (status IN ('TODO', 'IN_PROGRESS', 'DONE', 'TEST'));
+                ADD CONSTRAINT status_check CHECK (status IN ('TODO', 'IN_PROGRESS', 'DONE', 'TEST', 'ARCHIVE'));
         </sql>
 
         <sql>

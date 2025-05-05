@@ -10,7 +10,7 @@ import java.util.UUID;
 @Data
 @Builder
 public class ExtendedProjectDto {
-    private ProjectDto projectDto;
+    private ProjectDto project;
     private List<TaskDto> tasks;
     private List<ProjectMemberDto> members;
 }

@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Repository
 public interface ProjectsRepository extends JpaRepository<ProjectEntity, UUID> {
-    @Query(value = """
+    /*@Query(value = """
        select new com.toddler.dto.DashboardDto(p.id, p.name, p.description, pm.role)
        from ProjectEntity p
        join ProjectMemberEntity pm on p.id = pm.projectId
@@ -30,5 +30,25 @@ public interface ProjectsRepository extends JpaRepository<ProjectEntity, UUID> {
        where u.email = :email
        and p.status = 'archive'
     """)
-    List<DashboardDto> findAllArchiveUserProjectsByEmail(@Param("email")String email);
+    List<DashboardDto> findAllArchiveUserProjectsByEmail(@Param("email")String email);*/
+
+    @Query("SELECT new com.toddler.dto.DashboardDto(p.id, p.name, p.status, p.description) " +
+            "FROM ProjectEntity p " +
+            "LEFT JOIN ProjectMemberEntity pm ON p.id = pm.projectId " +
+            "JOIN UserEntity u ON pm.userId = u.id OR p.ownerId = u.id " +
+            "WHERE u.email = :email AND p.status = 'ACTIVE'")
+    List<DashboardDto> findAllActiveUserProjectsByEmail(String email);
+
+    @Query("SELECT new com.toddler.dto.DashboardDto(p.id, p.name, p.status, p.description) " +
+            "FROM ProjectEntity p " +
+            "LEFT JOIN ProjectMemberEntity pm ON p.id = pm.projectId " +
+            "JOIN UserEntity u ON pm.userId = u.id OR p.ownerId = u.id " +
+            "WHERE u.email = :email AND p.status = 'ARCHIVED'")
+    List<DashboardDto> findAllArchiveUserProjectsByEmail(String email);
+
+    @Query("SELECT COUNT(pm) FROM ProjectMemberEntity pm WHERE pm.projectId = :projectId")
+    int countProjectMembers(UUID projectId);
+
+    @Query("SELECT p.name FROM ProjectEntity p WHERE p.id = :projectId")
+    String findProjectNameById(UUID projectId);
 }

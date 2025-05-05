@@ -12,11 +12,37 @@
       padding: 0;
     }
 
+    nav {
+      background-color: #007bff;
+      padding: 10px 20px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    nav button {
+      padding: 8px 15px;
+      background-color: #ffffff;
+      color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    nav button:hover {
+      background-color: #e0e0e0;
+    }
+
     .container {
       display: flex;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 20px;
+      padding: 80px 20px 20px; /* Добавлен верхний отступ для панели навигации */
       gap: 20px;
     }
 
@@ -154,6 +180,12 @@
   </style>
 </head>
 <body>
+  <nav>
+    <button onclick="window.location.href='dashboard.html'">Дашборд</button>
+    <button onclick="window.location.href='userSettings.html'">Профиль</button>
+    <button onclick="logout()">Выйти</button>
+  </nav>
+
   <div class="container">
     <div class="main-content">
       <div class="header">
@@ -173,13 +205,23 @@
         </div>
 
         <div class="form-group">
-          <label for="username">Имя</label>
-          <input type="text" id="username" name="username">
+          <label for="firstName">Имя</label>
+          <input type="text" id="firstName" name="firstName" placeholder="Введите имя">
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Фамилия</label>
+          <input type="text" id="lastName" name="lastName" placeholder="Введите фамилию">
+        </div>
+
+        <div class="form-group">
+          <label for="username">Имя пользователя</label>
+          <input type="text" id="username" name="username" placeholder="Введите имя пользователя">
         </div>
 
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" name="email">
+          <input type="email" id="email" name="email" placeholder="Введите email">
         </div>
 
         <div class="form-group">
@@ -204,8 +246,8 @@
   </div>
 
   <script>
-    const API_BASE_URL = '/api/v1';
-    const token = localStorage.getItem('jwtToken'); // Assume token is stored after login
+    const API_BASE_URL = 'http://localhost:8080/api/v1';
+    const token = sessionStorage.getItem('accessToken'); // Assume token is stored after login
 
     // Helper function to show error messages
     function showError(message) {
@@ -237,6 +279,8 @@
           throw new Error('Failed to fetch user profile');
         }
         const user = await response.json();
+        document.getElementById('firstName').value = user.firstName || '';
+        document.getElementById('lastName').value = user.lastName || '';
         document.getElementById('username').value = user.username || '';
         document.getElementById('email').value = user.email || '';
         if (user.profilePicture) {
@@ -265,7 +309,7 @@
           throw new Error('Failed to upload avatar');
         }
         const result = await response.json();
-        document.getElementById('avatarPreview').src = result.profilePictureUrl;
+        document.getElementById('avatarPreview').src = result.profilePicture;
       } catch (error) {
         showError('Ошибка при загрузке аватара: ' + error.message);
       }
@@ -273,16 +317,18 @@
 
     // Update user profile
     async function updateProfile() {
+      const firstName = document.getElementById('firstName').value;
+      const lastName = document.getElementById('lastName').value;
       const username = document.getElementById('username').value;
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
 
       if (!username || !email) {
-        showError('Имя и email обязательны');
+        showError('Имя пользователя и email обязательны');
         return;
       }
 
-      const updateData = { username, email };
+      const updateData = { firstName, lastName, username, email };
       if (password) {
         updateData.password = password;
       }
@@ -294,7 +340,8 @@
           body: JSON.stringify(updateData)
         });
         if (!response.ok) {
-          throw new Error('Failed to update profile');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to update profile');
         }
         showError('Профиль успешно обновлён');
         document.getElementById('password').value = ''; // Clear password field
@@ -351,6 +398,12 @@
       } catch (error) {
         showError('Ошибка при отметке уведомления: ' + error.message);
       }
+    }
+
+    // Logout function
+    function logout() {
+      sessionStorage.removeItem("accessToken");
+      window.location.href = "login.html";
     }
 
     // Initialize page

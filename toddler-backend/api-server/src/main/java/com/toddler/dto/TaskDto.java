@@ -14,6 +14,6 @@ public class TaskDto {
     private String status;
     private String priority;
     private UUID projectId;
-    private LocalDateTime deadline;
+    private LocalDate deadline;
     private UserDto executor;
 }

@@ -11,11 +11,39 @@
       margin: 0;
       padding: 0;
     }
+
+    nav {
+      background-color: #007bff;
+      padding: 10px 20px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    nav button {
+      padding: 8px 15px;
+      background-color: #ffffff;
+      color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    nav button:hover {
+      background-color: #e0e0e0;
+    }
+
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 20px;
+      padding: 80px 20px 20px; /* Добавлен верхний отступ для панели */
     }
+
     .header {
       display: flex;
       justify-content: space-between;
@@ -23,9 +51,16 @@
       padding: 10px 0;
       border-bottom: 2px solid #ccc;
     }
+
     .header h1 {
       margin: 0;
     }
+
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
     .button {
       padding: 10px 20px;
       background-color: #007bff;
@@ -34,14 +69,17 @@
       border-radius: 5px;
       cursor: pointer;
     }
+
     .button:hover {
       background-color: #0056b3;
     }
+
     .tabs {
       margin: 20px 0;
       display: flex;
       gap: 10px;
     }
+
     .tab-button {
       padding: 10px 20px;
       background-color: #e0e0e0;
@@ -50,31 +88,37 @@
       cursor: pointer;
       font-size: 16px;
     }
+
     .tab-button.active {
       background-color: #007bff;
       color: white;
     }
+
     .tab-button:hover {
       background-color: #0056b3;
       color: white;
     }
+
     .filters {
       margin: 20px 0;
       display: flex;
       justify-content: flex-start;
       gap: 15px;
     }
+
     .filters select {
       padding: 8px;
       font-size: 14px;
       border-radius: 5px;
       border: 1px solid #ccc;
     }
+
     .projects-list {
       display: flex;
       flex-wrap: wrap;
       gap: 20px;
     }
+
     .project-card {
       background-color: #ffffff;
       padding: 20px;
@@ -84,16 +128,20 @@
       cursor: pointer;
       transition: transform 0.3s ease;
     }
+
     .project-card:hover {
       transform: scale(1.05);
     }
+
     .project-card h3 {
       margin-top: 0;
     }
+
     .project-card p {
       color: #666;
       font-size: 14px;
     }
+
     .project-card .view-button {
       margin-top: 10px;
       display: inline-block;
@@ -103,9 +151,11 @@
       text-decoration: none;
       border-radius: 5px;
     }
+
     .project-card .view-button:hover {
       background-color: #218838;
     }
+
     .form-container {
       background-color: white;
       padding: 20px;
@@ -113,6 +163,7 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       margin-top: 20px;
     }
+
     .form-container input,
     .form-container textarea {
       width: 100%;
@@ -121,20 +172,82 @@
       border: 1px solid #ccc;
       border-radius: 5px;
     }
+
     .tab-content {
       display: none;
     }
+
     .tab-content.active {
       display: block;
+    }
+
+    .search-bar {
+      margin: 20px 0;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    /* Стили для модального окна */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1001;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 400px;
+      max-width: 90%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+    }
+
+    .modal-content input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .modal-content .button-container {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
     }
   </style>
 </head>
 <body>
-
+  <nav>
+    <button onclick="window.location.href='dashboard.html'">Дашборд</button>
+    <button onclick="window.location.href='userSettings.html'">Профиль</button>
+    <button onclick="logout()">Выйти</button>
+  </nav>
   <div class="container">
     <div class="header">
       <h1>Дашборд</h1>
-      <button class="button" onclick="toggleForm()">Создать новый проект</button>
+      <div class="header-buttons">
+        <button class="button" onclick="toggleForm()">Создать новый проект</button>
+        <button class="button" onclick="openJoinModal()">Присоединиться по ссылке</button>
+      </div>
     </div>
 
     <div class="form-container" id="create-project-form" style="display: none;">
@@ -143,6 +256,17 @@
       <textarea id="project-description" placeholder="Описание проекта" rows="4" required></textarea>
       <button class="button" onclick="createProject()">Создать проект</button>
       <button class="button" onclick="toggleForm()">Отмена</button>
+    </div>
+
+    <div class="modal" id="join-project-modal">
+      <div class="modal-content">
+        <h3>Присоединиться к проекту</h3>
+        <input type="text" id="invite-link" placeholder="Вставьте ссылку-приглашение" required>
+        <div class="button-container">
+          <button class="button" onclick="joinProject()">Присоединиться</button>
+          <button class="button" onclick="closeJoinModal()">Отмена</button>
+        </div>
+      </div>
     </div>
 
     <div class="tabs">
@@ -173,7 +297,6 @@
       }
 
       try {
-        // Получаем активные проекты
         const activeRes = await fetch("http://localhost:8080/api/v1/dashboard", {
           headers: {
             "Authorization": "Bearer " + token
@@ -187,7 +310,6 @@
           alert("Ошибка получения активных проектов");
         }
 
-        // Получаем архивированные проекты
         const archiveRes = await fetch("http://localhost:8080/api/v1/dashboard/archive", {
           headers: {
             "Authorization": "Bearer " + token
@@ -206,24 +328,26 @@
       }
     });
 
-    // Функция для отображения проектов
+    function logout() {
+      sessionStorage.removeItem("accessToken");
+      window.location.href = "login.html";
+    }
+
     function renderProjects(projects, containerId) {
       const container = document.getElementById(containerId);
-      container.innerHTML = ""; // очищаем список
-
+      container.innerHTML = "";
       projects.forEach(project => {
         const card = document.createElement("div");
         card.className = "project-card";
         card.innerHTML = `
           <h3>${project.name}</h3>
           <p>${project.description}</p>
-          <a href="/html-frontend/project.html?id=${project.uuid}" class="view-button">Перейти в проект</a>
+          <a href="project.html?id=${project.id}" class="view-button">Перейти в проект</a>
         `;
         container.appendChild(card);
       });
     }
 
-    // Функция для поиска проектов по названию
     function searchProjects() {
       let input = document.getElementById("search").value.toLowerCase();
       const activeTab = document.querySelector('.tab-content.active');
@@ -235,13 +359,11 @@
       });
     }
 
-    // Функция для отображения формы создания нового проекта
     function toggleForm() {
       const form = document.getElementById("create-project-form");
       form.style.display = form.style.display === "none" ? "block" : "none";
     }
 
-    // Функция для создания нового проекта
     async function createProject() {
       const name = document.getElementById("project-name").value;
       const description = document.getElementById("project-description").value;
@@ -253,7 +375,7 @@
       }
 
       try {
-        const res = await fetch("http://localhost:8080/api/v1/project", {
+        const res = await fetch("http://localhost:8080/api/v1/projects", {
           method: "POST",
           headers: {
             "Authorization": "Bearer " + token,
@@ -267,8 +389,8 @@
 
         if (res.ok) {
           const newProject = await res.json();
-          renderProjects([newProject], 'active-projects-list'); // Обновляем список активных проектов
-          toggleForm(); // Закрываем форму
+          renderProjects([newProject.project], 'active-projects-list');
+          toggleForm();
         } else {
           alert("Ошибка создания проекта.");
         }
@@ -277,7 +399,6 @@
       }
     }
 
-    // Функция для переключения вкладок
     function showTab(tabId) {
       const tabs = document.querySelectorAll('.tab-content');
       const buttons = document.querySelectorAll('.tab-button');
@@ -296,11 +417,72 @@
         }
       });
 
-      // Сбрасываем поиск при переключении вкладки
       document.getElementById("search").value = "";
       searchProjects();
     }
-  </script>
 
+    function openJoinModal() {
+      const modal = document.getElementById("join-project-modal");
+      modal.style.display = "flex";
+      document.getElementById("invite-link").value = "";
+    }
+
+    function closeJoinModal() {
+      const modal = document.getElementById("join-project-modal");
+      modal.style.display = "none";
+    }
+
+    async function joinProject() {
+      const inviteLink = document.getElementById("invite-link").value.trim();
+      const token = sessionStorage.getItem("accessToken");
+
+      if (!inviteLink) {
+        alert("Пожалуйста, вставьте ссылку-приглашение.");
+        return;
+      }
+
+      // Извлечение projectId и token из ссылки
+      const regex = /http:\/\/localhost:8080\/api\/v1\/invite\/join\/([0-9a-fA-F-]{36})/;
+      const match = inviteLink.match(regex);
+      if (!match || !match[1]) {
+        alert("Неверный формат ссылки-приглашения.");
+        return;
+      }
+
+      const projectId = match[1];
+      const inviteToken = projectId; // Предполагаем, что токен совпадает с projectId, как в примере
+
+      try {
+        const res = await fetch(`http://localhost:8080/api/v1/invite/join/${projectId}?token=${inviteToken}`, {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (res.ok) {
+          alert("Вы успешно присоединились к проекту!");
+          closeJoinModal();
+          // Обновляем список активных проектов
+          const activeRes = await fetch("http://localhost:8080/api/v1/dashboard", {
+            headers: {
+              "Authorization": "Bearer " + token
+            }
+          });
+          if (activeRes.ok) {
+            const activeProjects = await activeRes.json();
+            renderProjects(activeProjects, 'active-projects-list');
+          }
+        } else {
+          const errorData = await res.json();
+          alert("Ошибка при присоединении к проекту: " + (errorData.message || "Неизвестная ошибка"));
+        }
+      } catch (error) {
+        console.error("Ошибка при присоединении к проекту:", error);
+        alert("Произошла ошибка при попытке присоединиться к проекту.");
+      }
+    }
+  </script>
 </body>
 </html>

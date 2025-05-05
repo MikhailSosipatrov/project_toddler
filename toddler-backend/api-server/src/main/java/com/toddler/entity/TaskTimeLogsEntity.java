@@ -22,9 +22,7 @@ import java.util.UUID;
 @Builder
 public class TaskTimeLogsEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
+    private UUID id;
 
     @Column(name = "task_id", nullable = false)
     private UUID taskId;
