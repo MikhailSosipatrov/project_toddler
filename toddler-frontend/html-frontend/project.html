@@ -760,10 +760,6 @@
     }
 
     function dragStart(event) {
-      if (currentUserRole === 'MEMBER') {
-        showNotification('У вас нет прав для изменения статуса задач', 'error');
-        return;
-      }
       draggedTask = event.target.closest('.task');
       if (draggedTask) {
         draggedTask.classList.add('dragging');
@@ -1160,7 +1156,7 @@
     return;
   }
 
-  const link = `${API_BASE_URL}/invite/join/${currentProjectId}&token=${Math.random().toString(36).substr(2, 8)}`;
+  const link = `${API_BASE_URL}/invite/join/${currentProjectId}?token=${Math.random().toString(36).substr(2, 8)}`;
   const input = document.getElementById('inviteLink');
 
   if (!input) {

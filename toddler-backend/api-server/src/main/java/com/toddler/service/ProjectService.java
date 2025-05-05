@@ -197,7 +197,7 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
-    private List<ProjectMemberDto> getProjectMembers(UUID projectUUID) {
+    public List<ProjectMemberDto> getProjectMembers(UUID projectUUID) {
         List<ProjectMemberEntity> members = projectMemberRepository.findAllByProjectId(projectUUID);
         Set<UUID> userIds = members.stream()
                 .map(ProjectMemberEntity::getUserId)

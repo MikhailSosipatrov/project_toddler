@@ -394,7 +394,7 @@
         document.getElementById("task-info").innerHTML = `
           <p><label>Название:</label> <span id="task-title-text">${taskData.title || 'Без названия'}</span></p>
           <p><label>Описание:</label> <span id="task-description-text">${taskData.description || 'Не указано'}</span></p>
-          <p><label>Исполнитель:</label> <span id="task-assignee-text">${taskData.assignee ? taskData.assignee.firstName + ' ' + taskData.assignee.lastName + '('+taskData.assignee.userName+')': 'Не назначен'}</span></p>
+          <p><label>Исполнитель:</label> <span id="task-assignee-text">${taskData.assignee ? taskData.assignee.firstName + ' ' + taskData.assignee.lastName + '('+taskData.assignee.username+')': 'Не назначен'}</span></p>
           <p><label>Приоритет:</label> <span id="task-priority-text">${taskData.priority || 'Не указан'}</span></p>
           <p><label>Дедлайн:</label> <span id="task-deadline-text">${taskData.deadline || 'Не указан'}</span></p>
         `;

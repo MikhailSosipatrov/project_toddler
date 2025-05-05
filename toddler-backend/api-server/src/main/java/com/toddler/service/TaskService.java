@@ -4,6 +4,7 @@ import com.toddler.controller.payload.CreateTaskPayload;
 import com.toddler.controller.payload.UpdateTaskPayload;
 import com.toddler.controller.payload.UpdateTaskStatusPayload;
 import com.toddler.dto.CommentDto;
+import com.toddler.dto.ProjectMemberDto;
 import com.toddler.dto.StatusHistoryDto;
 import com.toddler.dto.TaskDetailsDto;
 import com.toddler.dto.TaskDetailsTimeLogDto;
@@ -34,6 +35,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -58,6 +60,7 @@ public class TaskService {
     private final TaskCommentRepository taskCommentRepository;
     private final TaskStatusHistoryRepository taskStatusHistoryRepository;
     private final NotificationService notificationService;
+    private final ProjectService projectService;
 
     @Transactional
     public TaskDto createTask(UUID projectId, CreateTaskPayload payload, HttpServletRequest request) {
@@ -216,6 +219,41 @@ public class TaskService {
 
         task.setTitle(payload.title());
         task.setDescription(payload.description());
+
+        if (payload.assigneeId() != null) {
+            List<ProjectMemberDto> projectMembers = projectService.getProjectMembers(task.getProjectId());
+            boolean isValidAssignee = projectMembers.stream()
+                    .anyMatch(member -> member.getUser().getId().equals(payload.assigneeId()));
+            if (!isValidAssignee) {
+                throw new IllegalArgumentException("Assignee with ID " + payload.assigneeId() + " is not a member of the project");
+            }
+            task.setAssignedTo(payload.assigneeId());
+        } else {
+            task.setAssignedTo(null); // Allow unassigning the task
+        }
+
+        // Update priority
+        if (payload.priority() != null) {
+            // Assuming priority is validated against a set of allowed values (e.g., LOW, MEDIUM, HIGH)
+            String priority = payload.priority().toUpperCase();
+            if (!List.of("LOW", "MEDIUM", "HIGH").contains(priority)) {
+                throw new IllegalArgumentException("Invalid priority value: " + payload.priority());
+            }
+            task.setPriority(priority);
+        }
+
+        // Update deadline
+        if (payload.deadline() != null) {
+            try {
+                LocalDate deadline = LocalDate.parse(payload.deadline()); // Assuming YYYY-MM-DD format
+                task.setDueDate(deadline);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid deadline format: " + payload.deadline());
+            }
+        } else {
+            task.setDueDate(null);
+        }
+
         taskRepository.save(task);
 
         return getTaskDetails(taskId);

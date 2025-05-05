@@ -3,6 +3,7 @@ package com.toddler.controller;
 import com.toddler.controller.payload.CreateProjectPayload;
 import com.toddler.controller.payload.UpdateProjectPayload;
 import com.toddler.dto.ExtendedProjectDto;
+import com.toddler.dto.ProjectMemberDto;
 import com.toddler.dto.TaskDto;
 import com.toddler.exception.NotFoundException;
 import com.toddler.exception.UnauthorizedException;
@@ -36,6 +37,12 @@ public class ProjectController {
     public ResponseEntity<ExtendedProjectDto> getProject(@PathVariable UUID projectId) {
         ExtendedProjectDto project = projectService.getProject(projectId);
         return ResponseEntity.ok(project);
+    }
+
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<List<ProjectMemberDto>> getProjectMembers(@PathVariable UUID projectId) {
+        List<ProjectMemberDto> projectMembers = projectService.getProjectMembers(projectId);
+        return ResponseEntity.ok(projectMembers);
     }
 
     @PutMapping("/{projectId}")
