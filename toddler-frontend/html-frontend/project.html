@@ -1155,19 +1155,53 @@
 
     // Остальные функции
     function generateInviteLink() {
-      if (currentUserRole === 'MEMBER') {
-        showNotification('У вас нет прав для приглашения участников', 'error');
-        return;
-      }
-      const link = `${API_BASE_URL}/invite/join/${currentProjectId}&token=${Math.random().toString(36).substr(2, 8)}`;
-      const input = document.getElementById('inviteLink');
-      input.value = link;
-      input.select();
-      navigator.clipboard.writeText(link).then(() => {
+  if (currentUserRole === 'MEMBER') {
+    showNotification('У вас нет прав для приглашения участников', 'error');
+    return;
+  }
+
+  const link = `${API_BASE_URL}/invite/join/${currentProjectId}&token=${Math.random().toString(36).substr(2, 8)}`;
+  const input = document.getElementById('inviteLink');
+
+  if (!input) {
+    console.error('Элемент #inviteLink не найден');
+    return;
+  }
+
+  input.value = link;
+  input.select();
+
+  // Проверка наличия API буфера обмена и метода writeText
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    navigator.clipboard.writeText(link)
+      .then(() => {
         showNotification('Ссылка скопирована!');
+      })
+      .catch(err => {
+        console.error('Ошибка копирования:', err);
+        showNotification('Не удалось скопировать ссылку', 'error');
       });
-      document.getElementById('inviteModal').style.display = 'flex';
+  } else {
+    // Фолбэк: попытка использовать document.execCommand (устаревший, но работает в старых браузерах)
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        showNotification('Ссылка скопирована!');
+      } else {
+        showNotification('Не удалось скопировать ссылку', 'error');
+      }
+    } catch (err) {
+      console.error('Ошибка копирования (fallback):', err);
+      showNotification('Не удалось скопировать ссылку', 'error');
     }
+  }
+
+  const modal = document.getElementById('inviteModal');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
 
     function closeInviteModal() {
       document.getElementById('inviteModal').style.display = 'none';
