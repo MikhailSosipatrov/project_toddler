@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Отчет по проекту</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 60px 2em 2em; /* Добавлен верхний отступ для панели */
+      padding: 0;
+    }
+
+    nav {
+      background-color: #007bff;
+      padding: 10px 20px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    nav button {
+      padding: 8px 15px;
+      background-color: #ffffff;
+      color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    nav button:hover {
+      background-color: #e0e0e0;
+    }
+
+    h1, h2 {
+      border-bottom: 1px solid #ccc;
+    }
+
+    .section {
+      margin-bottom: 3em;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1em;
+    }
+
+    .card {
+      border: 1px solid #ccc;
+      padding: 1em;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+
+    canvas {
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <button onclick="window.location.href='dashboard.html'">Дашборд</button>
+    <button onclick="window.location.href='userSettings.html'">Профиль</button>
+    <button onclick="logout()">Выйти</button>
+  </nav>
+
+  <h1>📁 Отчет по проекту: <span id="project-name">Загрузка...</span></h1>
+
+  <div class="section">
+    <h2>📌 Общая информация</h2>
+    <div class="stats-grid">
+      <div class="card">Всего задач: <strong id="task-count">0</strong></div>
+      <div class="card">Участников: <strong id="member-count">0</strong></div>
+      <div class="card">Комментарии: <strong id="comment-count">0</strong></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📈 Статус задач</h2>
+    <canvas id="statusChart"></canvas>
+  </div>
+
+  <div class="section">
+    <h2>🚦 Приоритеты задач</h2>
+    <canvas id="priorityChart"></canvas>
+  </div>
+
+  <div class="section">
+    <h2>⏱ Временные метрики</h2>
+    <div class="stats-grid">
+      <div class="card">Среднее время выполнения: <strong id="avg-time">0ч</strong></div>
+      <div class="card">Максимальное время: <strong id="max-time">0ч</strong></div>
+      <div class="card">Общее время всех участников: <strong id="total-time">0ч</strong></div>
+    </div>
+    <canvas id="avgTimeChart"></canvas>
+  </div>
+
+  <div class="section">
+    <h2>👥 Активность пользователей</h2>
+    <canvas id="userTasksChart"></canvas>
+    <canvas id="userTimeChart"></canvas>
+  </div>
+
+  <div class="section">
+    <h2>📅 Динамика задач во времени</h2>
+    <canvas id="tasksOverTimeChart"></canvas>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('projectId') || 'default-project-uuid';
+    const API_BASE_URL = 'http://backend:8080/api/v1/project';
+    const token = sessionStorage.getItem("accessToken");
+
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    function logout() {
+      sessionStorage.removeItem("accessToken");
+      window.location.href = "login.html";
+    }
+
+    function formatDuration(hours) {
+      if (!hours) return '0ч';
+      const days = Math.floor(hours / 24);
+      const remainingHours = Math.round(hours % 24);
+      return days > 0 ? `${days}д ${remainingHours}ч` : `${remainingHours}ч`;
+    }
+
+    async function loadGeneralStats() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/${projectId}/stats`, { headers });
+        const data = await response.json();
+        document.getElementById('project-name').textContent = data.projectName || 'Неизвестный проект';
+        document.getElementById('task-count').textContent = data.taskCount || 0;
+        document.getElementById('member-count').textContent = data.memberCount || 0;
+        document.getElementById('comment-count').textContent = data.commentCount || 0;
+        document.getElementById('avg-time').textContent = formatDuration(data.avgCompletionTime);
+        document.getElementById('max-time').textContent = formatDuration(data.maxCompletionTime);
+        document.getElementById('total-time').textContent = formatDuration(data.totalTimeSpent);
+      } catch (error) {
+        console.error('Ошибка загрузки общей статистики:', error);
+      }
+    }
+
+    async function loadStatusChart() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/${projectId}/task-status`, { headers });
+        const data = await response.json();
+        new Chart(document.getElementById('statusChart'), {
+          type: 'doughnut',
+          data: {
+            labels: data.labels || ['TODO', 'IN_PROGRESS', 'TEST', 'DONE'],
+            datasets: [{
+              label: 'Задачи по статусу',
+              data: data.data || [0, 0, 0, 0],
+              backgroundColor: ['#f39c12', '#3498db', '#9b59b6', '#2ecc71']
+            }]
+          }
+        });
+      } catch (error) {
+        console.error('Ошибка загрузки графика статусов:', error);
+      }
+    }
+
+    async function loadPriorityChart() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/${projectId}/task-priority`, { headers });
+        const data = await response.json();
+        new Chart(document.getElementById('priorityChart'), {
+          type: 'bar',
+          data: {
+            labels: data.labels || ['LOW', 'MEDIUM', 'HIGH'],
+            datasets: [{
+              label: 'Задачи по приоритету',
+              data: data.data || [0, 0, 0],
+              backgroundColor: ['#95a5a6', '#f1c40f', '#e74c3c']
+            }]
+          }
+        });
+      } catch (error) {
+        console.error('Ошибка загрузки графика приоритетов:', error);
+      }
+    }
+
+    async function loadAvgTimeChart() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/${projectId}/avg-time`, { headers });
+        const data = await response.json();
+        new Chart(document.getElementById('avgTimeChart'), {
+          type: 'line',
+          data: {
+            labels: data.labels || ['LOW', 'MEDIUM', 'HIGH'],
+            datasets: [{
+              label: 'Среднее время выполнения (дни)',
+              data: data.data || [0, 0, 0],
+              borderColor: '#2c3e50',
+              fill: false,
+              tension: 0.3
+            }]
+          }
+        });
+      } catch (error) {
+        console.error('Ошибка загрузки графика среднего времени:', error);
+      }
+    }
+
+    async function loadUserTasksChart() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/${projectId}/user-tasks`, { headers });
+        const data = await response.json();
+        new Chart(document.getElementById('userTasksChart'), {
+          type: 'bar',
+          data: {
+            labels: data.labels || [],
+            datasets: [{
+              label: 'Назначенные задачи',
+              data: data.data || [],
+              backgroundColor: '#2980b9'
+            }]
+          }
+        });
+      } catch (error) {
+        console.error('Ошибка загрузки графика задач пользователей:', error);
+      }
+    }
+
+    async function loadUserTimeChart() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/${projectId}/user-time`, { headers });
+        const data = await response.json();
+        new Chart(document.getElementById('userTimeChart'), {
+          type: 'bar',
+          data: {
+            labels: data.labels || [],
+            datasets: [{
+              label: 'Затраченные часы',
+              data: data.data || [],
+              backgroundColor: '#8e44ad'
+            }]
+          }
+        });
+      } catch (error) {
+        console.error('Ошибка загрузки графика времени пользователей:', error);
+      }
+    }
+
+    async function loadTasksOverTimeChart() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/${projectId}/tasks-over-time`, { headers });
+        const data = await response.json();
+        new Chart(document.getElementById('tasksOverTimeChart'), {
+          type: 'line',
+          data: {
+            labels: data.labels || [],
+            datasets: [{
+              label: 'Всего задач',
+              data: data.data || [],
+              borderColor: '#27ae60',
+              fill: false,
+              tension: 0.3
+            }]
+          }
+        });
+      } catch (error) {
+        console.error('Ошибка загрузки графика динамики задач:', error);
+      }
+    }
+
+    Promise.all([
+      loadGeneralStats(),
+      loadStatusChart(),
+      loadPriorityChart(),
+      loadAvgTimeChart(),
+      loadUserTasksChart(),
+      loadUserTimeChart(),
+      loadTasksOverTimeChart()
+    ]).catch(error => console.error('Ошибка загрузки данных:', error));
+  </script>
+</body>
+</html>

@@ -16,10 +16,17 @@ public class DashboardService {
     private final JwtService jwtService;
     private final ProjectsRepository projectsRepository;
 
-    public List<DashboardDto> getDashboardProjects(HttpServletRequest request) {
+    public List<DashboardDto> getDashboardActiveProjects(HttpServletRequest request) {
         String authorizationHeader = request.getHeader("Authorization");
         String jwtToken = authorizationHeader.substring(7);
         String email = jwtService.getEmailFromToken(jwtToken);
-        return projectsRepository.findAllUserProjectsByEmail(email);
+        return projectsRepository.findAllActiveUserProjectsByEmail(email);
+    }
+
+    public List<DashboardDto> getDashboardArchiveProjects(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader("Authorization");
+        String jwtToken = authorizationHeader.substring(7);
+        String email = jwtService.getEmailFromToken(jwtToken);
+        return projectsRepository.findAllArchiveUserProjectsByEmail(email);
     }
 }

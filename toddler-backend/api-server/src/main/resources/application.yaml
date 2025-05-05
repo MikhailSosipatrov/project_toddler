@@ -14,6 +14,27 @@ spring:
         persistence:
           sharedCache:
             mode: ENABLE_SELECTIVE
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+  mail:
+    host: smtp.yandex.ru
+    port: 465
+    username: mikhailsosipatrov194@yandex.ru
+    password: cwddqddkwhhogbsf
+    protocol: smtps
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+
+  # Enable scheduling
+  task:
+    scheduling:
+      enabled: true
 
 application:
-  test: hello
+  file:
+    upload-dir: C:/app/uploads
+    access-url: http://localhost:8080/uploads/
+
