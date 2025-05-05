@@ -8,8 +8,34 @@
     body {
       font-family: Arial, sans-serif;
       background-color: #f4f7fc;
-      margin: 0;
+      margin: 60px 0 0 0; /* Добавлен верхний отступ для панели */
       padding: 0;
+    }
+
+    nav {
+      background-color: #007bff;
+      padding: 10px 20px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    nav button {
+      padding: 8px 15px;
+      background-color: #ffffff;
+      color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    nav button:hover {
+      background-color: #e0e0e0;
     }
 
     .container {
@@ -218,6 +244,12 @@
   </style>
 </head>
 <body>
+  <nav>
+    <button onclick="window.location.href='dashboard.html'">Дашборд</button>
+    <button onclick="window.location.href='userSettings.html'">Профиль</button>
+    <button onclick="logout()">Выйти</button>
+  </nav>
+
   <div id="notification"></div>
   <div class="container">
     <div class="header">
@@ -277,11 +309,17 @@
     let currentElapsedSeconds = 0;
     let taskData = null; // Хранит исходные данные задачи для отмены редактирования
     let isEditing = false;
+    let projectMembers = []; // Хранит список участников проекта
 
     const headers = {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     };
+
+    function logout() {
+      sessionStorage.removeItem("accessToken");
+      window.location.href = "login.html";
+    }
 
     window.onload = () => {
       if (!token) {
@@ -294,6 +332,7 @@
         window.location.href = "project.html";
         return;
       }
+      loadProjectMembers();
       loadTaskData();
     };
 
@@ -301,13 +340,25 @@
       return new URLSearchParams(window.location.search).get(param);
     }
 
-    function showReport() {
-    if (taskId) {
-      window.location.href = `taskReport.html?id=${taskId}`;
-    } else {
-      showNotification('ID проекта не определен', 'error');
+    async function loadProjectMembers() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/project/${projectId}/members`, { headers });
+        if (!response.ok) throw new Error(`Ошибка загрузки участников проекта: ${response.status}`);
+        projectMembers = await response.json();
+        console.log('Project members loaded:', projectMembers);
+      } catch (err) {
+        console.error("Ошибка при загрузке участников проекта:", err);
+        showNotification("Ошибка при загрузке участников проекта", "error");
+      }
     }
-  }
+
+    function showReport() {
+      if (taskId) {
+        window.location.href = `taskReport.html?id=${taskId}`;
+      } else {
+        showNotification('ID проекта не определен', 'error');
+      }
+    }
 
     function showNotification(message, type = 'error') {
       const notification = document.getElementById('notification');
@@ -394,7 +445,7 @@
         document.getElementById("task-info").innerHTML = `
           <p><label>Название:</label> <span id="task-title-text">${taskData.title || 'Без названия'}</span></p>
           <p><label>Описание:</label> <span id="task-description-text">${taskData.description || 'Не указано'}</span></p>
-          <p><label>Исполнитель:</label> <span id="task-assignee-text">${taskData.assignee ? taskData.assignee.firstName + ' ' + taskData.assignee.lastName + '('+taskData.assignee.username+')': 'Не назначен'}</span></p>
+          <p><label>Исполнитель:</label> <span id="task-assignee-text">${taskData.assignee ? `${taskData.assignee.firstName} ${taskData.assignee.lastName} (${taskData.assignee.username})` : 'Не назначен'}</span></p>
           <p><label>Приоритет:</label> <span id="task-priority-text">${taskData.priority || 'Не указан'}</span></p>
           <p><label>Дедлайн:</label> <span id="task-deadline-text">${taskData.deadline || 'Не указан'}</span></p>
         `;
@@ -444,10 +495,24 @@
       document.getElementById("save-task-btn").style.display = 'block';
       document.getElementById("cancel-task-btn").style.display = 'block';
 
+      // Создаем список опций для выбора исполнителя
+      const assigneeOptions = [
+        `<option value="">Не назначен</option>`,
+        ...projectMembers.map(member =>
+          `<option value="${member.user.id}" ${taskData.assignee && taskData.assignee.id === member.user.id ? 'selected' : ''}>
+            ${member.user.firstName} ${member.user.lastName} (${member.user.username})
+          </option>`
+        )
+      ].join('');
+
       document.getElementById("task-info").innerHTML = `
         <p><label>Название:</label> <input id="task-title-input" value="${taskData.title || ''}"></p>
         <p><label>Описание:</label> <input id="task-description-input" value="${taskData.description || ''}"></p>
-        <p><label>Исполнитель:</label> <input id="task-assignee-input" value="${taskData.assignee ? taskData.assignee.firstName + ' ' + taskData.assignee.lastName : ''}" disabled></p>
+        <p><label>Исполнитель:</label> 
+          <select id="task-assignee-input">
+            ${assigneeOptions}
+          </select>
+        </p>
         <p><label>Приоритет:</label> 
           <select id="task-priority-input">
             <option value="LOW" ${taskData.priority === 'LOW' ? 'selected' : ''}>Низкий</option>
@@ -469,7 +534,7 @@
       document.getElementById("task-info").innerHTML = `
         <p><label>Название:</label> <span id="task-title-text">${taskData.title || 'Без названия'}</span></p>
         <p><label>Описание:</label> <span id="task-description-text">${taskData.description || 'Не указано'}</span></p>
-        <p><label>Исполнитель:</label> <span id="task-assignee-text">${taskData.assignee ? taskData.assignee.firstName + ' ' + taskData.assignee.lastName : 'Не назначен'}</span></p>
+        <p><label>Исполнитель:</label> <span id="task-assignee-text">${taskData.assignee ? `${taskData.assignee.firstName} ${taskData.assignee.lastName} (${taskData.assignee.username})` : 'Не назначен'}</span></p>
         <p><label>Приоритет:</label> <span id="task-priority-text">${taskData.priority || 'Не указан'}</span></p>
         <p><label>Дедлайн:</label> <span id="task-deadline-text">${taskData.deadline || 'Не указан'}</span></p>
       `;
@@ -481,6 +546,7 @@
       try {
         const title = document.getElementById("task-title-input").value.trim();
         const description = document.getElementById("task-description-input").value.trim();
+        const assigneeId = document.getElementById("task-assignee-input").value || null;
         const priority = document.getElementById("task-priority-input").value;
         const deadline = document.getElementById("task-deadline-input").value;
 
@@ -495,6 +561,7 @@
           body: JSON.stringify({
             title,
             description,
+            assigneeId,
             priority,
             deadline: deadline || null
           })
