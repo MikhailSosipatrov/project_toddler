@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Отчет по задаче</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 60px 2em 2em;
+      padding: 0;
+    }
+
+    nav {
+      background-color: #007bff;
+      padding: 10px 20px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    nav button {
+      padding: 8px 15px;
+      background-color: #ffffff;
+      color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    nav button:hover {
+      background-color: #e0e0e0;
+    }
+
+    h1, h2 {
+      border-bottom: 1px solid #ccc;
+      margin-top: 2em;
+    }
+
+    .info p, .logs li, .timeline li {
+      margin: 0.5em 0;
+    }
+
+    .info {
+      margin-bottom: 2em;
+    }
+
+    .timeline, .logs {
+      margin-left: 1em;
+      margin-bottom: 2em;
+    }
+
+    .chart-container {
+      margin: 2em 0;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <button onclick="window.location.href='dashboard.html'">Дашборд</button>
+    <button onclick="window.location.href='userSettings.html'">Профиль</button>
+    <button onclick="logout()">Выйти</button>
+  </nav>
+
+  <h1>📌 Отчет по задаче: <span id="task-title">Загрузка...</span></h1>
+
+  <div class="info">
+    <p>Статус: <strong id="task-status">Загрузка...</strong></p>
+    <p>Приоритет: <strong id="task-priority">Загрузка...</strong></p>
+    <p>Исполнитель: <strong id="task-assignee">Загрузка...</strong></p>
+    <p>Дата создания: <strong id="task-created">Загрузка...</strong></p>
+    <p>Срок выполнения: <strong id="task-due">Загрузка...</strong></p>
+  </div>
+
+  <h2>📊 История статусов</h2>
+  <ul class="timeline" id="status-timeline">
+    <li>Загрузка...</li>
+  </ul>
+
+  <div class="chart-container">
+    <h2>📈 График переходов статусов</h2>
+    <canvas id="statusTimelineChart"></canvas>
+  </div>
+
+  <h2>⏱ Временные логи</h2>
+  <ul class="logs" id="time-logs">
+    <li>Загрузка...</li>
+  </ul>
+  <p><strong id="total-hours">Итого: Загрузка...</strong></p>
+
+  <div class="chart-container">
+    <h2>⏲️ Визуализация временных затрат</h2>
+    <canvas id="timeSpentChart"></canvas>
+  </div>
+
+  <h2>💬 Комментарии</h2>
+  <ul class="logs" id="comments">
+    <li>Загрузка...</li>
+  </ul>
+
+  <div class="chart-container">
+    <h2>📅 Вклад по датам</h2>
+    <canvas id="dailyContributionChart"></canvas>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const taskId = urlParams.get('id');
+    const apiBaseUrl = 'http://localhost:8080/api/v1/tasks/report';
+    const token = sessionStorage.getItem("accessToken");
+
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    function logout() {
+      sessionStorage.removeItem("accessToken");
+      window.location.href = "login.html";
+    }
+
+    const formatDate = (dateStr) => {
+      if (!dateStr) return 'Н/Д';
+      return new Date(dateStr).toLocaleDateString('ru-RU');
+    };
+
+    const formatHours = (hours) => {
+      if (!hours || hours <= 0) return '0 минут';
+      const totalMinutes = Math.round(hours * 60); // Convert hours to minutes and round
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      if (h > 0 && m > 0) return `${h} часов ${m} минут`;
+      if (h > 0) return `${h} часов`;
+      return `${m} минут`;
+    };
+
+    const calculateHours = (start, end) => {
+      if (!end) return 0;
+      const diff = new Date(end) - new Date(start);
+      return (diff / 1000 / 60 / 60).toFixed(2);
+    };
+
+    async function fetchTaskDetails() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/${taskId}`, { headers });
+        if (!response.ok) throw new Error('Не удалось загрузить детали задачи');
+        const task = await response.json();
+        document.getElementById('task-title').textContent = task.title;
+        document.getElementById('task-status').textContent = task.status;
+        document.getElementById('task-priority').textContent = task.priority;
+        document.getElementById('task-assignee').textContent = task.assigneeName || 'Не назначен';
+        document.getElementById('task-created').textContent = formatDate(task.createdAt);
+        document.getElementById('task-due').textContent = formatDate(task.dueDate);
+      } catch (error) {
+        document.getElementById('task-title').textContent = 'Ошибка';
+        document.getElementById('task-title').classList.add('error');
+        console.error('Ошибка загрузки деталей задачи:', error);
+      }
+    }
+
+    async function fetchStatusHistory() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/${taskId}/status-history`, { headers });
+        if (!response.ok) throw new Error('Не удалось загрузить историю статусов');
+        const history = await response.json();
+        const timeline = document.getElementById('status-timeline');
+        timeline.innerHTML = history.length ? '' : '<li>Нет истории статусов</li>';
+        history.forEach(h => {
+          const li = document.createElement('li');
+          li.textContent = `${h.status} (с ${formatDate(h.statusEnteredAt)}${h.statusLeftAt ? ` до ${formatDate(h.statusLeftAt)}` : ''})`;
+          timeline.appendChild(li);
+        });
+
+        new Chart(document.getElementById('statusTimelineChart'), {
+          type: 'bar',
+          data: {
+            labels: history.map(h => h.status),
+            datasets: [{
+              label: 'Длительность (в часах)',
+              data: history.map(h => calculateHours(h.statusEnteredAt, h.statusLeftAt || new Date())),
+              backgroundColor: ['#f39c12', '#3498db', '#2ecc71', '#e74c3c']
+            }]
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { title: { display: true, text: 'Часы' } } }
+          }
+        });
+      } catch (error) {
+        document.getElementById('status-timeline').innerHTML = '<li class="error">Ошибка загрузки истории статусов</li>';
+        console.error('Ошибка загрузки истории статусов:', error);
+      }
+    }
+
+    async function fetchTimeLogs() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/${taskId}/time-logs`, { headers });
+        if (!response.ok) throw new Error('Не удалось загрузить временные логи');
+        const logs = await response.json();
+        const logList = document.getElementById('time-logs');
+        logList.innerHTML = logs.length ? '' : '<li>Нет временных логов</li>';
+        logs.forEach(log => {
+          const li = document.createElement('li');
+          li.textContent = `${log.userName}: ${formatHours(log.hours)} (${formatDate(log.startTime)})`;
+          logList.appendChild(li);
+        });
+        const totalHours = logs.reduce((sum, log) => sum + parseFloat(log.hours), 0);
+        document.getElementById('total-hours').textContent = `Итого: ${formatHours(totalHours)}`;
+
+        new Chart(document.getElementById('timeSpentChart'), {
+          type: 'pie',
+          data: {
+            labels: logs.map(log => log.userName),
+            datasets: [{
+              label: 'Часы',
+              data: logs.map(log => log.hours),
+              backgroundColor: ['#8e44ad', '#3498db', '#2ecc71']
+            }]
+          }
+        });
+
+        const dailyHours = {};
+        logs.forEach(log => {
+          const date = formatDate(log.startTime);
+          dailyHours[date] = (dailyHours[date] || 0) + parseFloat(log.hours);
+        });
+        new Chart(document.getElementById('dailyContributionChart'), {
+          type: 'line',
+          data: {
+            labels: Object.keys(dailyHours),
+            datasets: [{
+              label: 'Часы в день',
+              data: Object.values(dailyHours),
+              borderColor: '#2ecc71',
+              backgroundColor: '#2ecc7144',
+              tension: 0.3,
+              fill: true
+            }]
+          },
+          options: {
+            scales: {
+              y: { beginAtZero: true, title: { display: true, text: 'Часы' } },
+              x: { title: { display: true, text: 'Дата' } }
+            }
+          }
+        });
+      } catch (error) {
+        document.getElementById('time-logs').innerHTML = '<li class="error">Ошибка загрузки временных логов</li>';
+        console.error('Ошибка загрузки временных логов:', error);
+      }
+    }
+
+    async function fetchComments() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/${taskId}/comments`, { headers });
+        if (!response.ok) throw new Error('Не удалось загрузить комментарии');
+        const comments = await response.json();
+        const commentList = document.getElementById('comments');
+        commentList.innerHTML = comments.length ? '' : '<li>Нет комментариев</li>';
+        comments.forEach(c => {
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${c.userName}:</strong> ${c.content} (${formatDate(c.createdAt)})`;
+          commentList.appendChild(li);
+        });
+      } catch (error) {
+        document.getElementById('comments').innerHTML = '<li class="error">Ошибка загрузки комментариев</li>';
+        console.error('Ошибка загрузки комментариев:', error);
+      }
+    }
+
+    async function loadReport() {
+      await Promise.all([
+        fetchTaskDetails(),
+        fetchStatusHistory(),
+        fetchTimeLogs(),
+        fetchComments()
+      ]);
+    }
+
+    if (taskId) {
+      loadReport();
+    } else {
+      document.getElementById('task-title').textContent = 'Ошибка: ID задачи не указан';
+      document.getElementById('task-title').classList.add('error');
+    }
+  </script>
+</body>
+</html>
