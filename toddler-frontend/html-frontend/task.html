@@ -342,7 +342,7 @@
 
     async function loadProjectMembers() {
       try {
-        const response = await fetch(`${API_BASE_URL}/project/${projectId}/members`, { headers });
+        const response = await fetch(`${API_BASE_URL}/projects/${projectId}/members`, { headers });
         if (!response.ok) throw new Error(`Ошибка загрузки участников проекта: ${response.status}`);
         projectMembers = await response.json();
         console.log('Project members loaded:', projectMembers);
