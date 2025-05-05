@@ -115,7 +115,7 @@
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const projectId = urlParams.get('projectId') || 'default-project-uuid';
-    const apiBaseUrl = 'http://localhost:8080/api/v1/project';
+    const API_BASE_URL = 'http://backend:8080/api/v1/project';
     const token = sessionStorage.getItem("accessToken");
 
     const headers = {
@@ -137,7 +137,7 @@
 
     async function loadGeneralStats() {
       try {
-        const response = await fetch(`${apiBaseUrl}/${projectId}/stats`, { headers });
+        const response = await fetch(`${API_BASE_URL}/${projectId}/stats`, { headers });
         const data = await response.json();
         document.getElementById('project-name').textContent = data.projectName || 'Неизвестный проект';
         document.getElementById('task-count').textContent = data.taskCount || 0;
@@ -153,7 +153,7 @@
 
     async function loadStatusChart() {
       try {
-        const response = await fetch(`${apiBaseUrl}/${projectId}/task-status`, { headers });
+        const response = await fetch(`${API_BASE_URL}/${projectId}/task-status`, { headers });
         const data = await response.json();
         new Chart(document.getElementById('statusChart'), {
           type: 'doughnut',
@@ -173,7 +173,7 @@
 
     async function loadPriorityChart() {
       try {
-        const response = await fetch(`${apiBaseUrl}/${projectId}/task-priority`, { headers });
+        const response = await fetch(`${API_BASE_URL}/${projectId}/task-priority`, { headers });
         const data = await response.json();
         new Chart(document.getElementById('priorityChart'), {
           type: 'bar',
@@ -193,7 +193,7 @@
 
     async function loadAvgTimeChart() {
       try {
-        const response = await fetch(`${apiBaseUrl}/${projectId}/avg-time`, { headers });
+        const response = await fetch(`${API_BASE_URL}/${projectId}/avg-time`, { headers });
         const data = await response.json();
         new Chart(document.getElementById('avgTimeChart'), {
           type: 'line',
@@ -215,7 +215,7 @@
 
     async function loadUserTasksChart() {
       try {
-        const response = await fetch(`${apiBaseUrl}/${projectId}/user-tasks`, { headers });
+        const response = await fetch(`${API_BASE_URL}/${projectId}/user-tasks`, { headers });
         const data = await response.json();
         new Chart(document.getElementById('userTasksChart'), {
           type: 'bar',
@@ -235,7 +235,7 @@
 
     async function loadUserTimeChart() {
       try {
-        const response = await fetch(`${apiBaseUrl}/${projectId}/user-time`, { headers });
+        const response = await fetch(`${API_BASE_URL}/${projectId}/user-time`, { headers });
         const data = await response.json();
         new Chart(document.getElementById('userTimeChart'), {
           type: 'bar',
@@ -255,7 +255,7 @@
 
     async function loadTasksOverTimeChart() {
       try {
-        const response = await fetch(`${apiBaseUrl}/${projectId}/tasks-over-time`, { headers });
+        const response = await fetch(`${API_BASE_URL}/${projectId}/tasks-over-time`, { headers });
         const data = await response.json();
         new Chart(document.getElementById('tasksOverTimeChart'), {
           type: 'line',

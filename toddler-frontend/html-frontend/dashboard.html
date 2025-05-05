@@ -287,6 +287,7 @@
   </div>
 
   <script>
+    const API_BASE_URL = 'http://backend:8080/api/v1';
     document.addEventListener("DOMContentLoaded", async function () {
       const token = sessionStorage.getItem("accessToken");
 
@@ -297,7 +298,7 @@
       }
 
       try {
-        const activeRes = await fetch("http://localhost:8080/api/v1/dashboard", {
+        const activeRes = await fetch(`${API_BASE_URL}/dashboard`, {
           headers: {
             "Authorization": "Bearer " + token
           }
@@ -310,7 +311,7 @@
           alert("Ошибка получения активных проектов");
         }
 
-        const archiveRes = await fetch("http://localhost:8080/api/v1/dashboard/archive", {
+        const archiveRes = await fetch(`${API_BASE_URL}/dashboard/archive`, {
           headers: {
             "Authorization": "Bearer " + token
           }
@@ -375,7 +376,7 @@
       }
 
       try {
-        const res = await fetch("http://localhost:8080/api/v1/projects", {
+        const res = await fetch(`${API_BASE_URL}/projects`, {
           method: "POST",
           headers: {
             "Authorization": "Bearer " + token,
@@ -433,56 +434,56 @@
     }
 
     async function joinProject() {
-      const inviteLink = document.getElementById("invite-link").value.trim();
-      const token = sessionStorage.getItem("accessToken");
+  const inviteLink = document.getElementById("invite-link").value.trim();
+  const token = sessionStorage.getItem("accessToken");
 
-      if (!inviteLink) {
-        alert("Пожалуйста, вставьте ссылку-приглашение.");
-        return;
-      }
+  if (!inviteLink) {
+    alert("Пожалуйста, вставьте ссылку-приглашение.");
+    return;
+  }
 
-      // Извлечение projectId и token из ссылки
-      const regex = /http:\/\/localhost:8080\/api\/v1\/invite\/join\/([0-9a-fA-F-]{36})/;
-      const match = inviteLink.match(regex);
-      if (!match || !match[1]) {
-        alert("Неверный формат ссылки-приглашения.");
-        return;
-      }
+  try {
+    const url = new URL(inviteLink);
+    const pathnameParts = url.pathname.split("/");
+    const projectId = pathnameParts[pathnameParts.length - 1];
+    const inviteToken = url.searchParams.get("token");
 
-      const projectId = match[1];
-      const inviteToken = projectId; // Предполагаем, что токен совпадает с projectId, как в примере
-
-      try {
-        const res = await fetch(`http://localhost:8080/api/v1/invite/join/${projectId}?token=${inviteToken}`, {
-          method: "POST",
-          headers: {
-            "Authorization": "Bearer " + token,
-            "Content-Type": "application/json"
-          }
-        });
-
-        if (res.ok) {
-          alert("Вы успешно присоединились к проекту!");
-          closeJoinModal();
-          // Обновляем список активных проектов
-          const activeRes = await fetch("http://localhost:8080/api/v1/dashboard", {
-            headers: {
-              "Authorization": "Bearer " + token
-            }
-          });
-          if (activeRes.ok) {
-            const activeProjects = await activeRes.json();
-            renderProjects(activeProjects, 'active-projects-list');
-          }
-        } else {
-          const errorData = await res.json();
-          alert("Ошибка при присоединении к проекту: " + (errorData.message || "Неизвестная ошибка"));
-        }
-      } catch (error) {
-        console.error("Ошибка при присоединении к проекту:", error);
-        alert("Произошла ошибка при попытке присоединиться к проекту.");
-      }
+    if (!projectId || !inviteToken) {
+      alert("Ссылка-приглашение некорректна или не содержит нужных параметров.");
+      return;
     }
+
+    const res = await fetch(`${API_BASE_URL}/invite/join/${projectId}?token=${inviteToken}`, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (res.ok) {
+      alert("Вы успешно присоединились к проекту!");
+      closeJoinModal();
+
+      const activeRes = await fetch(`${API_BASE_URL}/dashboard`, {
+        headers: {
+          "Authorization": "Bearer " + token
+        }
+      });
+
+      if (activeRes.ok) {
+        const activeProjects = await activeRes.json();
+        renderProjects(activeProjects, 'active-projects-list');
+      }
+    } else {
+      const errorData = await res.json();
+      alert("Ошибка при присоединении к проекту: " + (errorData.message || "Неизвестная ошибка"));
+    }
+  } catch (error) {
+    console.error("Ошибка при разборе ссылки или при присоединении к проекту:", error);
+    alert("Произошла ошибка при попытке присоединиться к проекту.");
+  }
+}
   </script>
 </body>
 </html>
