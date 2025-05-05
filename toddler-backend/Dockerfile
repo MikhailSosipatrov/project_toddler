@@ -1,7 +1,7 @@
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY . .
-RUN mvn package spring-boot:repackage
+RUN mvn -e package spring-boot:repackage
 
 ARG ENV_TAG=dev
 ENV SPRING_PROFILE=${ENV_TAG}
