@@ -5,5 +5,5 @@ RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jdk
 WORKDIR /app
-COPY --from=build /app/api-server/target/api-server-1.0-SNAPSHOT.jar app.jar
+COPY --from=build /app/api-server/target/api-server.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
