@@ -233,6 +233,10 @@ public class TaskService {
                 throw new IllegalArgumentException("Assignee with ID " + payload.assigneeId() + " is not a member of the project");
             }
             task.setAssignedTo(payload.assigneeId());
+            if (task.getAssignedTo() != null) {
+                String message = String.format("Вам назначена задача '%s'", task.getTitle());
+                notificationService.createNotification(task.getAssignedTo(), message);
+            }
         } else {
             task.setAssignedTo(null); // Allow unassigning the task
         }
