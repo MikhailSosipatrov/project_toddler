@@ -36,5 +36,5 @@ spring:
 application:
   file:
     upload-dir: /var/app/uploads
-    access-url: http://localhost:8080/uploads/
+    access-url: http://82.202.129.169:8080/uploads/
 
