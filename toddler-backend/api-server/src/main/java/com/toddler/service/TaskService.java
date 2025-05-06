@@ -88,6 +88,11 @@ public class TaskService {
                 .dueDate(payload.deadline())
                 .build();
 
+        if (task.getAssignedTo() != null) {
+            String message = String.format("Вам назначена задача '%s'", task.getTitle());
+            notificationService.createNotification(task.getAssignedTo(), message);
+        }
+
         taskRepository.save(task);
 
         TaskDto taskDto = taskMapper.fromEntityToDto(task);

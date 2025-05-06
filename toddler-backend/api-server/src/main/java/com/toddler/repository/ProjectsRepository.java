@@ -32,7 +32,7 @@ public interface ProjectsRepository extends JpaRepository<ProjectEntity, UUID> {
     """)
     List<DashboardDto> findAllArchiveUserProjectsByEmail(@Param("email")String email);*/
 
-    @Query("SELECT new com.toddler.dto.DashboardDto(p.id, p.name, p.status, p.description) " +
+    @Query("SELECT DISTINCT new com.toddler.dto.DashboardDto(p.id, p.name, p.status, p.description) " +
             "FROM ProjectEntity p " +
             "LEFT JOIN ProjectMemberEntity pm ON p.id = pm.projectId " +
             "JOIN UserEntity u ON pm.userId = u.id OR p.ownerId = u.id " +
