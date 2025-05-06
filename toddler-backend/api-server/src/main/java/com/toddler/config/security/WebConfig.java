@@ -25,7 +25,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Маппинг /uploads/** на локальную директорию uploadDir
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:/" + uploadDir + "/");
+                .addResourceLocations("file:" + uploadDir + "/");
     }
 }
 
